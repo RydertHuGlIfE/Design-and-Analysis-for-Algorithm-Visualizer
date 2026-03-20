@@ -53,24 +53,30 @@
 
             for (const step of data.steps) {
                 const parts = step.split(' ');
+                if (parts.length < 3) continue;
+
                 const type = parts[0];
                 const i = parseInt(parts[1]);
                 const j = parseInt(parts[2]);
 
                 if (type === 'CMP') {
-                    bars[i].style.backgroundColor = '#ef4444';
-                    bars[j].style.backgroundColor = '#ef4444';
-                    await sleep(100);
-                    bars[i].style.backgroundColor = '#6366f1';
-                    bars[j].style.backgroundColor = '#6366f1';
+                    if (bars[i] && bars[j]) {
+                        bars[i].style.backgroundColor = '#ef4444';
+                        bars[j].style.backgroundColor = '#ef4444';
+                        await sleep(50);
+                        bars[i].style.backgroundColor = '#6366f1';
+                        bars[j].style.backgroundColor = '#6366f1';
+                    }
                 } else if (type === 'UPD') {
-                    bars[i].style.height = `${j * 0.5}px`;
-                    bars[i].style.backgroundColor = '#f59e0b';
-                    await sleep(50);
-                    bars[i].style.backgroundColor = '#6366f1';
+                    if (bars[i]) {
+                        bars[i].style.height = `${j * 0.5}px`;
+                        bars[i].style.backgroundColor = '#f59e0b';
+                        await sleep(30);
+                        bars[i].style.backgroundColor = '#6366f1';
+                    }
                 }
             }
-            // Mark all as green/sorted
+
             for (let bar of bars) {
                 bar.style.backgroundColor = '#10b981';
             }

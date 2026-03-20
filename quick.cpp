@@ -44,10 +44,6 @@ int main() {
     int n = static_cast<int>(arr.size());
     
     quickSort(arr, 0, n - 1);
-    
-    for (size_t i = 0; i < arr.size(); i++) {
-        std::cout << arr[i] << (i == arr.size() - 1 ? "" : " ");
-    }
     std::cout << std::endl;
     
     return 0;
