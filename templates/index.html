@@ -17,7 +17,7 @@
         <div class="buttons">
             <div class="button-group">
                 <button onclick="startMergeSort()">Merge Sort</button>
-                <button>Quick Sort</button>
+                <button onclick="startQuickSort()">Quick Sort</button>
                 <button>Heap Sort</button>
                 <button>Bubble Sort</button>
                 <button>Insertion Sort</button>
@@ -32,7 +32,7 @@
 
     <script>
         const container = document.getElementById('bar-container');
-        let array = [38, 27, 43, 10, 101, 58, 67, 68, 69, 23, 79, 76, 420, 432, 7, 64, 56, 79];
+        let array = [120, 350, 50, 560, 200, 410, 80, 5, 290, 480, 150, 310, 220, 600, 100, 450, 30, 520, 180, 390];
 
         function createBars() {
             container.innerHTML = '';
@@ -71,6 +71,35 @@
                 }
             }
             // Mark all as green/sorted
+            for (let bar of bars) {
+                bar.style.backgroundColor = '#10b981';
+            }
+        }
+
+        async function startQuickSort() {
+            const response = await fetch('/quicksort');
+            const data = await response.json();
+            const bars = document.getElementsByClassName('bar');
+
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                const type = parts[0];
+                const i = parseInt(parts[1]);
+                const j = parseInt(parts[2]);
+
+                if (type === 'CMP') {
+                    bars[i].style.backgroundColor = '#ef4444';
+                    bars[j].style.backgroundColor = '#ef4444';
+                    await sleep(30);
+                    bars[i].style.backgroundColor = '#6366f1';
+                    bars[j].style.backgroundColor = '#6366f1';
+                } else if (type === 'UPD') {
+                    bars[i].style.height = `${j * 0.5}px`;
+                    bars[i].style.backgroundColor = '#f59e0b';
+                    await sleep(30);
+                    bars[i].style.backgroundColor = '#6366f1';
+                }
+            }
             for (let bar of bars) {
                 bar.style.backgroundColor = '#10b981';
             }

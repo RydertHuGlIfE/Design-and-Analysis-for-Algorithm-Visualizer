@@ -62,7 +62,7 @@ void mergeSort(std::vector<int>& arr, int left, int right) {
 }
 
 int main() {
-    std::vector<int> arr = {38, 27, 43, 10, 101,58,67,68,69,23,79,76,420,432,7,64,56,79};
+    std::vector<int> arr = {120, 350, 50, 560, 200, 410, 80, 5, 290, 480, 150, 310, 220, 600, 100, 450, 30, 520, 180, 390};
     mergeSort(arr, 0, static_cast<int>(arr.size()) - 1);
     
     for (size_t i = 0; i < arr.size(); i++) {

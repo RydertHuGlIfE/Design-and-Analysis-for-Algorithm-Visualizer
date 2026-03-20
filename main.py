@@ -18,6 +18,15 @@ def get_merge_steps():
         steps.append(line.strip())
     return jsonify({"steps": steps})
 
+@app.route('/quicksort')
+def get_quick_steps():
+    process = subprocess.Popen(['./quick'], stdout=subprocess.PIPE, text=True)
+    steps = []
+
+    for line in process.stdout:
+        steps.append(line.strip())
+    return jsonify({"steps": steps})
+
 
 if __name__ == '__main__':
     app.run(debug=False, port=5000)
