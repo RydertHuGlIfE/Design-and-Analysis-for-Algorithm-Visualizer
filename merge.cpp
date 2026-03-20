@@ -1,59 +1,73 @@
-function merge(arr, left, mid, right) {
-    const n1 = mid - left + 1;
-    const n2 = right - mid;
+#include <iostream>
+#include <vector>
 
-    // Create temp arrays
-    const L = new Array(n1);
-    const R = new Array(n2);
+void merge(std::vector<int>& arr, int left, int mid, int right) {
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
 
-    // Copy data to temp arrays L[] and R[]
-    for (let i = 0; i < n1; i++)
-        L[i] = arr[left + i];
-    for (let j = 0; j < n2; j++)
-        R[j] = arr[mid + 1 + j];
+    std::vector<int> L(static_cast<std::size_t>(n1));
+    std::vector<int> R(static_cast<std::size_t>(n2));
 
-    let i = 0, j = 0;
-    let k = left;
+    for (int i = 0; i < n1; i++)
+        L[static_cast<std::size_t>(i)] = arr[static_cast<std::size_t>(left + i)];
+    for (int j = 0; j < n2; j++)
+        R[static_cast<std::size_t>(j)] = arr[static_cast<std::size_t>(mid + 1 + j)];
 
-    // Merge the temp arrays back into arr[left..right]
+    int i = 0, j = 0;
+    int k = left;
+
     while (i < n1 && j < n2) {
-        if (L[i] <= R[j]) {
-            arr[k] = L[i];
+        // REPORT COMPARE
+        std::cout << "CMP " << (left + i) << " " << (mid + 1 + j) << std::endl;
+
+        if (L[static_cast<std::size_t>(i)] <= R[static_cast<std::size_t>(j)]) {
+            arr[static_cast<std::size_t>(k)] = L[static_cast<std::size_t>(i)];
+            // REPORT UPDATE
+            std::cout << "UPD " << k << " " << arr[static_cast<std::size_t>(k)] << std::endl;
             i++;
         } else {
-            arr[k] = R[j];
+            arr[static_cast<std::size_t>(k)] = R[static_cast<std::size_t>(j)];
+            // REPORT UPDATE
+            std::cout << "UPD " << k << " " << arr[static_cast<std::size_t>(k)] << std::endl;
             j++;
         }
         k++;
     }
 
-    // Copy the remaining elements of L[], if there are any
     while (i < n1) {
-        arr[k] = L[i];
+        arr[static_cast<std::size_t>(k)] = L[static_cast<std::size_t>(i)];
+        // REPORT UPDATE
+        std::cout << "UPD " << k << " " << arr[static_cast<std::size_t>(k)] << std::endl;
         i++;
         k++;
     }
 
-    // Copy the remaining elements of R[], if there are any
     while (j < n2) {
-        arr[k] = R[j];
+        arr[static_cast<std::size_t>(k)] = R[static_cast<std::size_t>(j)];
+        // REPORT UPDATE
+        std::cout << "UPD " << k << " " << arr[static_cast<std::size_t>(k)] << std::endl;
         j++;
         k++;
     }
 }
 
-function mergeSort(arr, left, right) {
+void mergeSort(std::vector<int>& arr, int left, int right) {
     if (left >= right)
         return;
 
-    const mid = Math.floor(left + (right - left) / 2);
+    int mid = left + (right - left) / 2;
     mergeSort(arr, left, mid);
     mergeSort(arr, mid + 1, right);
     merge(arr, left, mid, right);
 }
 
-
-// Driver code
-const arr = [38, 27, 43, 10];
-mergeSort(arr, 0, arr.length - 1);
-console.log(arr.join(" "));
+int main() {
+    std::vector<int> arr = {38, 27, 43, 10, 101,58,67,68,69,23,79,76,420,432,7,64,56,79};
+    mergeSort(arr, 0, static_cast<int>(arr.size()) - 1);
+    
+    for (size_t i = 0; i < arr.size(); i++) {
+        std::cout << arr[i] << (i == arr.size() - 1 ? "" : " ");
+    }
+    std::cout << std::endl;
+    return 0;
+}

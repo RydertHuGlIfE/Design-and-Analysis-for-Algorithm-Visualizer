@@ -3,13 +3,81 @@
 
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="../static/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>DAA Visualizer</title>
 </head>
 
 <body>
+    <div class="container">
+        <div class="header">
+            <h1>DAA Visualizer</h1>
+        </div>
 
+        <div class="buttons">
+            <div class="button-group">
+                <button onclick="startMergeSort()">Merge Sort</button>
+                <button>Quick Sort</button>
+                <button>Heap Sort</button>
+                <button>Bubble Sort</button>
+                <button>Insertion Sort</button>
+                <button>Selection Sort</button>
+            </div>
+        </div>
+
+        <div id="bar-container" class="bar-container">
+            <!-- Bars will be generated here -->
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('bar-container');
+        let array = [38, 27, 43, 10, 101, 58, 67, 68, 69, 23, 79, 76, 420, 432, 7, 64, 56, 79];
+
+        function createBars() {
+            container.innerHTML = '';
+            array.forEach(value => {
+                const bar = document.createElement('div');
+                bar.classList.add('bar');
+                bar.style.height = `${value * 0.5}px`;
+                container.appendChild(bar);
+            });
+        }
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        async function startMergeSort() {
+            const response = await fetch('/mergesort');
+            const data = await response.json();
+            const bars = document.getElementsByClassName('bar');
+
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                const type = parts[0];
+                const i = parseInt(parts[1]);
+                const j = parseInt(parts[2]);
+
+                if (type === 'CMP') {
+                    bars[i].style.backgroundColor = '#ef4444';
+                    bars[j].style.backgroundColor = '#ef4444';
+                    await sleep(100);
+                    bars[i].style.backgroundColor = '#6366f1';
+                    bars[j].style.backgroundColor = '#6366f1';
+                } else if (type === 'UPD') {
+                    bars[i].style.height = `${j * 0.5}px`;
+                    bars[i].style.backgroundColor = '#f59e0b';
+                    await sleep(50);
+                    bars[i].style.backgroundColor = '#6366f1';
+                }
+            }
+            // Mark all as green/sorted
+            for (let bar of bars) {
+                bar.style.backgroundColor = '#10b981';
+            }
+        }
+
+        createBars();
+    </script>
 </body>
 
 </html>

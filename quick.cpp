@@ -1,60 +1,45 @@
-// partition function
-function partition(arr, low, high)
-{
+#include <iostream>
+#include <vector>
+#include <algorithm>
 
-    // choose the pivot
-    let pivot = arr[high];
+void swap(std::vector<int>& arr, int i, int j) {
+    int temp = arr[static_cast<std::size_t>(i)];
+    arr[static_cast<std::size_t>(i)] = arr[static_cast<std::size_t>(j)];
+    arr[static_cast<std::size_t>(j)] = temp;
+}
 
-    // index of smaller element and indicates
-    // the right position of pivot found so far
-    let i = low - 1;
+int partition(std::vector<int>& arr, int low, int high) {
+    int pivot = arr[static_cast<std::size_t>(high)];
+    int i = low - 1;
 
-    // traverse arr[low..high] and move all smaller
-    // elements to the left side. Elements from low to
-    // i are smaller after every iteration
-    for (let j = low; j <= high - 1; j++) {
-        if (arr[j] < pivot) {
+    for (int j = low; j <= high - 1; j++) {
+        if (arr[static_cast<std::size_t>(j)] < pivot) {
             i++;
             swap(arr, i, j);
         }
     }
-
-    // move pivot after smaller elements and
-    // return its position
     swap(arr, i + 1, high);
     return i + 1;
 }
 
-// swap function
-function swap(arr, i, j)
-{
-    let temp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = temp;
-}
-
-// the QuickSort function implementation
-function quickSort(arr, low, high)
-{
+void quickSort(std::vector<int>& arr, int low, int high) {
     if (low < high) {
-
-        // pi is the partition return index of pivot
-        let pi = partition(arr, low, high);
-
-        // recursion calls for smaller elements
-        // and greater or equals elements
+        int pi = partition(arr, low, high);
         quickSort(arr, low, pi - 1);
         quickSort(arr, pi + 1, high);
     }
 }
 
-
-// Driver Code
-let arr = [ 10, 7, 8, 9, 1, 5 ];
-let n = arr.length;
-
-// call QuickSort on the entire array
-quickSort(arr, 0, n - 1);
-for (let i = 0; i < arr.length; i++) {
-    process.stdout.write(arr[i] + " ");
+int main() {
+    std::vector<int> arr = {10, 7, 8, 9, 1, 5};
+    int n = static_cast<int>(arr.size());
+    
+    quickSort(arr, 0, n - 1);
+    
+    for (size_t i = 0; i < arr.size(); i++) {
+        std::cout << arr[i] << (i == arr.size() - 1 ? "" : " ");
+    }
+    std::cout << std::endl;
+    
+    return 0;
 }
