@@ -44,7 +44,6 @@ int main() {
     int n = static_cast<int>(arr.size());
     
     quickSort(arr, 0, n - 1);
-    std::cout << std::endl;
     
     return 0;
 }

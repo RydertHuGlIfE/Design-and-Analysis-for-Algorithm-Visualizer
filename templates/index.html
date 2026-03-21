@@ -19,13 +19,13 @@
                 <button onclick="startMergeSort()">Merge Sort</button>
                 <button onclick="startQuickSort()">Quick Sort</button>
                 <button>Heap Sort</button>
-                <button>Bubble Sort</button>
+                <button onclick="startbubbleSort()">Bubble Sort</button>
                 <button>Insertion Sort</button>
                 <button>Selection Sort</button>
             </div>
             <div class="speed-control">
                 <label for="speed-slider">Animation Speed</label>
-                <input type="range" id="speed-slider" min="1" max="200" value="50">
+                <input type="range" id="speed-slider" min="1" max="400" value="50">
                 <span id="speed-value">50ms</span>
             </div>
         </div>
@@ -44,17 +44,20 @@
             },
             'Quick Sort': {
                 complexity: 'O(n log n)', case: 'Unstable'
+            },
+            'Bubble Sort': {
+                complexity: 'O(n^2)', case: 'Stable'
             }
         };
         const container = document.getElementById('bar-container');
         const statusElement = document.getElementById('status-info');
         const speedSlider = document.getElementById('speed-slider');
         const speedValue = document.getElementById('speed-value');
-        
+
         let animationSpeed = parseInt(speedSlider.value);
         let array = [120, 350, 50, 560, 200, 410, 80, 5, 290, 480, 150, 310, 220, 600, 100, 450, 30, 520, 180, 390];
 
-        speedSlider.oninput = function() {
+        speedSlider.oninput = function () {
             animationSpeed = parseInt(this.value);
             speedValue.innerText = `${this.value}ms`;
         }
@@ -116,6 +119,43 @@
                 bar.style.backgroundColor = '#10b981';
             }
             onSortComplete('Merge Sort');
+        }
+
+
+        async function startbubbleSort() {
+            const response = await fetch('/bubblesort');
+            const data = await response.json();
+            const bars = document.getElementsByClassName('bar')
+
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                if (parts.length < 3) continue;
+
+                const type = parts[0];
+                const i = parseInt(parts[1]);
+                const j = parseInt(parts[2]);
+
+                if (type == 'CMP') {
+                    if (bars[i] && bars[j]) {
+                        bars[i].style.backgroundColor = '#f59e0b';
+                        bars[j].style.backgroundColor = '#f59e0b';
+                        await sleep(animationSpeed);
+                        bars[i].style.backgroundColor = '#6366f1';
+                        bars[j].style.backgroundColor = '#6366f1';
+                    }
+                } else if (type == 'UPD') {
+                    if (bars[i]) {
+                        bars[i].style.height = `${j * 0.5}px`;
+                        bars[i].style.backgroundColor = '#f59e0b';
+                        await sleep(animationSpeed);
+                        bars[i].style.backgroundColor = '#6366f1';
+                    }
+                }
+            }
+            for (let bar of bars) {
+                bar.style.backgroundColor = '#10b981';
+            }
+            onSortComplete('Bubble Sort');
         }
 
         async function startQuickSort() {

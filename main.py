@@ -28,5 +28,15 @@ def get_quick_steps():
     return jsonify({"steps": steps})
 
 
+@app.route('/bubblesort')
+def get_bubble_steps():
+    process = subprocess.Popen(['./bubble'], stdout=subprocess.PIPE, text=True)
+    steps = []
+
+    for line in process.stdout:
+        steps.append(line.strip())
+    return jsonify({"steps": steps})
+
+
 if __name__ == '__main__':
     app.run(debug=False, port=5000)
