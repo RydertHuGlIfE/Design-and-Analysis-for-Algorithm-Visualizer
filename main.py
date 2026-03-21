@@ -38,6 +38,25 @@ def get_heap_steps():
     return jsonify({"steps": steps})
 
 
+@app.route('/insertionsort')
+def get_inse_steps():
+    process = subprocess.Popen(['./insertion'], stdout=subprocess.PIPE, text=True)
+    steps = []
+
+    for line in process.stdout:
+        steps.append(line.strip())
+    return jsonify({"steps": steps})
+
+@app.route('/selectionsort')
+def get_select_steps():
+    process = subprocess.Popen(['./selection'], stdout=subprocess.PIPE, text=True)
+    steps = []
+
+    for line in process.stdout:
+        steps.append(line.strip())
+    return jsonify({"steps": steps})
+    
+
 @app.route('/bubblesort')
 def get_bubble_steps():
     process = subprocess.Popen(['./bubble'], stdout=subprocess.PIPE, text=True)

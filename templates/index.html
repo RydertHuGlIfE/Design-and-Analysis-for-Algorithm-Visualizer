@@ -20,8 +20,8 @@
                 <button onclick="startQuickSort()">Quick Sort</button>
                 <button onclick="startHeapSort()">Heap Sort</button>
                 <button onclick="startbubbleSort()">Bubble Sort</button>
-                <button>Insertion Sort</button>
-                <button>Selection Sort</button>
+                <button onclick="startInsertionSort()">Insertion Sort</button>
+                <button onclick="startSelectionSort()">Selection Sort</button>
             </div>
             <div class="speed-control">
                 <label for="speed-slider">Animation Speed</label>
@@ -47,6 +47,12 @@
             },
             'Bubble Sort': {
                 complexity: 'O(n^2)', case: 'Stable'
+            },
+            'Insertion Sort': {
+                complexity: 'O(n^2)', case: 'Stable'
+            },
+            'Selection Sort': {
+                complexity: 'O(n^2)', case: 'Unstable'
             }
         };
         const container = document.getElementById('bar-container');
@@ -83,6 +89,79 @@
 
 
         const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+
+        async function startSelectionSort() {
+            const response = await fetch('/selectionsort');
+            const data = await response.json();
+            const bars = document.getElementsByClassName('bar');
+
+            for (const step of data.steps) {
+                const parts = step.split(" ");
+                if (parts.length < 3) continue;
+
+                const type = parts[0];
+                const i = parseInt(parts[1]);
+                const j = parseInt(parts[2]);
+
+                if (type === 'CMP') {
+                    if (bars[i] && bars[j]) {
+                        bars[i].style.backgroundColor = '#f59e0b';
+                        bars[j].style.backgroundColor = '#f59e0b';
+                        await sleep(animationSpeed);
+                        bars[i].style.backgroundColor = '#6366f1';
+                        bars[j].style.backgroundColor = '#6366f1';
+                    }
+                } else if (type === 'UPD') {
+                    if (bars[i]) {
+                        bars[i].style.height = `${j * 0.5}px`;
+                        bars[i].style.backgroundColor = '#f59e0b';
+                        await sleep(animationSpeed);
+                        bars[i].style.backgroundColor = '#6366f1';
+                    }
+                }
+            }
+            for (let bar of bars) {
+                bar.style.backgroundColor = '#10b981';
+            }
+            onSortComplete('Selection Sort');
+        }
+
+        async function startInsertionSort() {
+            const response = await fetch('/insertionsort');
+            const data = await response.json();
+            const bars = document.getElementsByClassName('bar')
+
+            for (const step of data.steps) {
+                const parts = step.split(" ");
+                if (parts.length < 3) continue;
+
+                const type = parts[0];
+                const i = parseInt(parts[1]);
+                const j = parseInt(parts[2]);
+
+                if (type === 'CMP') {
+                    if (bars[i] && bars[j]) {
+                        bars[i].style.backgroundColor = '#f59e0b';
+                        bars[j].style.backgroundColor = '#f59e0b';
+                        await sleep(animationSpeed);
+                        bars[i].style.backgroundColor = '#6366f1';
+                        bars[j].style.backgroundColor = '#6366f1';
+                    }
+                } else if (type === 'UPD') {
+                    if (bars[i]) {
+                        bars[i].style.height = `${j * 0.5}px`;
+                        bars[i].style.backgroundColor = '#f59e0b';
+                        await sleep(animationSpeed);
+                        bars[i].style.backgroundColor = '#6366f1';
+                    }
+                }
+            }
+            for (let bar of bars) {
+                bar.style.backgroundColor = '#10b981';
+            }
+            onSortComplete('Insertion Sort');
+        }
 
 
         async function startHeapSort() {
