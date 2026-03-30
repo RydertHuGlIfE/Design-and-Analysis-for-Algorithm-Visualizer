@@ -33,7 +33,6 @@ void insert(Node*& root, int val, int parent_id = -1, char dir = ' '){
 
 void inorder(Node* root){
     if (!root) return;
-
     inorder(root->left);
     cout << "ACT " << root->id << endl;
     inorder(root->right);
@@ -53,18 +52,19 @@ void postorder(Node* root){
     cout << "ACT " << root->id << endl;
 }
 
-int main(){
+int main(int argc, char* argv[]){
     Node* root = nullptr;
+
     int arr[] = {50, 30, 70, 20, 40, 60, 80};
     for(int x : arr) insert(root, x);
-    
-    // Commands for front-end to know which traversal is starting
-    cout << "START_INORDER" << endl;
-    inorder(root);
-    cout << "START_PREORDER" << endl;
-    preorder(root);
-    cout << "START_POSTORDER" << endl;
-    postorder(root);
+
+    string type = (argc > 1) ? argv[1] : "all";
+
+    if (type=="build") return 0;     //just build tree not orderr
+   
+    if (type == "inorder") inorder(root);
+    if (type == "preorder") preorder(root);
+    if (type == "postorder") postorder(root);
     
     return 0;
 }
