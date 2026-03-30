@@ -9,6 +9,14 @@ def mainpage():
     return render_template('index.html')
 
 
+@app.route('/tree')
+def get_tree_steps():
+    process = subprocess.Popen(['./tree'], stdout=subprocess.PIPE, text=True)
+    steps = []
+    for line in process.stdout:
+        steps.append(line.strip())
+    return jsonify({"steps": steps})
+
 @app.route('/mergesort')
 def get_merge_steps():
     process=subprocess.Popen(['./merge'], stdout=subprocess.PIPE, text=True)

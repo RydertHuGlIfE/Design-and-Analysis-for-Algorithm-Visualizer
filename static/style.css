@@ -143,3 +143,55 @@ button:hover {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Tree Visualization Styles */
+.tree-container {
+    margin-top: 3rem;
+    width: 100%;
+    max-width: 900px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    overflow: auto;
+}
+
+.node {
+    fill: var(--card-bg);
+    stroke: var(--primary-color);
+    stroke-width: 2;
+    transition: all 0.3s ease;
+}
+
+.node.comparing {
+    fill: #f59e0b;
+    stroke: #fbbf24;
+    r: 25;
+}
+
+.node.active {
+    fill: #10b981;
+    stroke: #34d399;
+    r: 22;
+}
+
+.node-text {
+    fill: var(--text-main);
+    font-size: 14px;
+    font-weight: bold;
+    pointer-events: none;
+    font-family: 'Space Mono', monospace;
+}
+
+.edge {
+    stroke: rgba(148, 163, 184, 0.3);
+    stroke-width: 2;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: drawEdge 0.5s forwards ease-out;
+}
+
+@keyframes drawEdge {
+    to {
+        stroke-dashoffset: 0;
+    }
+}

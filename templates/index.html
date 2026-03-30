@@ -22,6 +22,7 @@
                 <button onclick="startbubbleSort()">Bubble Sort</button>
                 <button onclick="startInsertionSort()">Insertion Sort</button>
                 <button onclick="startSelectionSort()">Selection Sort</button>
+                <button onclick="startTreeVisualizer()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">BST Visualizer</button>
             </div>
             <div class="speed-control">
                 <label for="speed-slider">Animation Speed</label>
@@ -34,6 +35,10 @@
 
         <div id="bar-container" class="bar-container">
             <!-- Bars will be generated here -->
+        </div>
+
+        <div id="tree-container" class="tree-container" style="display: none;">
+            <svg id="tree-svg" width="100%" height="500"></svg>
         </div>
     </div>
 
@@ -55,6 +60,20 @@
                 complexity: 'O(n^2)', case: 'Unstable'
             }
         };
+
+        const nodeCoords = {};
+        const verticalGAP = 80;
+        const initialHorizontalGAP = 200;
+
+
+        function getpos(parentX, parentY, depth, direction) {
+            const xoffset = initialHorizontalGAP / Math.pow(2, depth - 1);
+            const x = (direction === 'L') ? parentX - xoffset : parentX + xoffset;
+            const y = parentY + verticalGAP;
+            return { x, y };
+        }
+
+
         const container = document.getElementById('bar-container');
         const statusElement = document.getElementById('status-info');
         const speedSlider = document.getElementById('speed-slider');
@@ -92,6 +111,8 @@
 
 
         async function startSelectionSort() {
+            document.getElementById('tree-container').style.display = 'none';
+            container.style.display = 'flex';
             const response = await fetch('/selectionsort');
             const data = await response.json();
             const bars = document.getElementsByClassName('bar');
@@ -128,6 +149,8 @@
         }
 
         async function startInsertionSort() {
+            document.getElementById('tree-container').style.display = 'none';
+            container.style.display = 'flex';
             const response = await fetch('/insertionsort');
             const data = await response.json();
             const bars = document.getElementsByClassName('bar')
@@ -165,6 +188,8 @@
 
 
         async function startHeapSort() {
+            document.getElementById('tree-container').style.display = 'none';
+            container.style.display = 'flex';
             const response = await fetch('/heapsort');
             const data = await response.json();
             const bars = document.getElementsByClassName('bar');
@@ -201,6 +226,8 @@
         }
 
         async function startMergeSort() {
+            document.getElementById('tree-container').style.display = 'none';
+            container.style.display = 'flex';
             const response = await fetch('/mergesort');
             const data = await response.json();
             const bars = document.getElementsByClassName('bar');
@@ -239,6 +266,8 @@
 
 
         async function startbubbleSort() {
+            document.getElementById('tree-container').style.display = 'none';
+            container.style.display = 'flex';
             const response = await fetch('/bubblesort');
             const data = await response.json();
             const bars = document.getElementsByClassName('bar')
@@ -275,6 +304,8 @@
         }
 
         async function startQuickSort() {
+            document.getElementById('tree-container').style.display = 'none';
+            container.style.display = 'flex';
             const response = await fetch('/quicksort');
             const data = await response.json();
             const bars = document.getElementsByClassName('bar');
@@ -302,6 +333,98 @@
                 bar.style.backgroundColor = '#10b981';
             }
             onSortComplete('Quick Sort');
+        }
+
+        async function startTreeVisualizer() {
+            container.style.display = 'none';
+            document.getElementById('tree-container').style.display = 'block';
+            statusElement.innerHTML = '<span class="complexity-info">Building BST and Running Traversals...</span>';
+            
+            const response = await fetch('/tree');
+            const data = await response.json();
+            const svg = document.getElementById('tree-svg');
+            svg.innerHTML = ''; // Clear previous
+            
+            const nodes = {}; // Store node positions
+            const centerX = svg.clientWidth / 2 || 450;
+            
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                const type = parts[0];
+                
+                if (type === 'NODE') {
+                    const id = parts[1];
+                    const val = parts[2];
+                    const pid = parts[3];
+                    const dir = parts[4];
+                    
+                    let x, y;
+                    if (pid === '-1') {
+                        x = centerX;
+                        y = 50;
+                    } else {
+                        const parent = nodes[pid];
+                        const depth = Math.floor((parent.y - 50) / verticalGAP) + 1;
+                        const pos = getpos(parent.x, parent.y, depth, dir);
+                        x = pos.x;
+                        y = pos.y;
+                        
+                        // Draw Edge
+                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        line.setAttribute("x1", parent.x);
+                        line.setAttribute("y1", parent.y);
+                        line.setAttribute("x2", x);
+                        line.setAttribute("y2", y);
+                        line.classList.add("edge");
+                        svg.appendChild(line);
+                    }
+                    
+                    nodes[id] = { x, y, val };
+                    
+                    // Draw Node Circle
+                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circle.setAttribute("cx", x);
+                    circle.setAttribute("cy", y);
+                    circle.setAttribute("r", 20);
+                    circle.setAttribute("id", `node-${id}`);
+                    circle.classList.add("node");
+                    svg.appendChild(circle);
+                    
+                    // Draw Node Text
+                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    text.setAttribute("x", x);
+                    text.setAttribute("y", y + 5);
+                    text.setAttribute("text-anchor", "middle");
+                    text.classList.add("node-text");
+                    text.textContent = val;
+                    svg.appendChild(text);
+                    
+                    await sleep(animationSpeed);
+                    
+                } else if (type === 'CMP') {
+                    const id = parts[1];
+                    const nodeEl = document.getElementById(`node-${id}`);
+                    if (nodeEl) {
+                        nodeEl.classList.add('comparing');
+                        await sleep(animationSpeed);
+                        nodeEl.classList.remove('comparing');
+                    }
+                } else if (type === 'ACT') {
+                    const id = parts[1];
+                    const nodeEl = document.getElementById(`node-${id}`);
+                    if (nodeEl) {
+                        nodeEl.classList.add('active');
+                        await sleep(animationSpeed);
+                    }
+                } else if (type.startsWith('START_')) {
+                    // Clear previous highlights
+                    const allNodes = document.querySelectorAll('.node');
+                    allNodes.forEach(n => n.classList.remove('active'));
+                    statusElement.innerHTML = `<span class="success-text">${type.replace('_', ' ')}</span>`;
+                    await sleep(1000);
+                }
+            }
+            statusElement.innerHTML = '<span class="success-text">Tree Operations Complete!</span>';
         }
 
         createBars();
