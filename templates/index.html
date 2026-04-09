@@ -1,359 +1,404 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DAA Visualizer</title>
+    <title>DAA Visualizer | Digital Astral</title>
 </head>
-
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>DAA Visualizer</h1>
-        </div>
-
-        <div class="buttons">
-            <div class="button-group">
-                <button onclick="startMergeSort()">Merge Sort</button>
-                <button onclick="startQuickSort()">Quick Sort</button>
-                <button onclick="startHeapSort()">Heap Sort</button>
-                <button onclick="startbubbleSort()">Bubble Sort</button>
-                <button onclick="startInsertionSort()">Insertion Sort</button>
-                <button onclick="startSelectionSort()">Selection Sort</button>
+    <div class="cockpit">
+        <!-- Sidebar: Algorithm Selection -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div style="width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%); border-radius: 8px;"></div>
+                <h1>DAA LAB</h1>
             </div>
-            <div class="button-group" style="margin-top: 1rem; grid-template-columns: repeat(4, 1fr);">
-                <button onclick="startTreeVisualizer('build')" style="background: #10b981;">BST: Build</button>
-                <button onclick="startTreeVisualizer('inorder')" style="background: #059669;">BST: Inorder</button>
-                <button onclick="startTreeVisualizer('preorder')" style="background: #047857;">BST: Preorder</button>
-                <button onclick="startTreeVisualizer('postorder')" style="background: #065f46;">BST: Postorder</button>
+            
+            <nav class="nav-section">
+                <h3>Sorting</h3>
+                <div class="nav-buttons">
+                    <button class="nav-btn" onclick="startMergeSort()">Merge Sort</button>
+                    <button class="nav-btn" onclick="startQuickSort()">Quick Sort</button>
+                    <button class="nav-btn" onclick="startHeapSort()">Heap Sort</button>
+                    <button class="nav-btn" onclick="startbubbleSort()">Bubble Sort</button>
+                    <button class="nav-btn" onclick="startInsertionSort()">Insertion Sort</button>
+                    <button class="nav-btn" onclick="startSelectionSort()">Selection Sort</button>
+                </div>
+            </nav>
+
+            <nav class="nav-section">
+                <h3>Trees</h3>
+                <div class="nav-buttons">
+                    <button class="nav-btn" onclick="startTreeVisualizer('build')">BST: Build</button>
+                    <button class="nav-btn" onclick="startTreeVisualizer('inorder')">BST: Inorder</button>
+                    <button class="nav-btn" onclick="startTreeVisualizer('preorder')">BST: Preorder</button>
+                    <button class="nav-btn" onclick="startTreeVisualizer('postorder')">BST: Postorder</button>
+                </div>
+            </nav>
+
+            <nav class="nav-section">
+                <h3>Advanced</h3>
+                <div class="nav-buttons">
+                    <button class="nav-btn" onclick="startKnapsack()">⚖️ 0/1 Knapsack</button>
+                    <button class="nav-btn" onclick="startMCM()">🧩 Matrix Chain</button>
+                    <button class="nav-btn" onclick="startHuffman()">🌳 Huffman Coding</button>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Header -->
+        <header class="header">
+            <div class="current-algo-title" id="active-algo-name">Select an Algorithm</div>
+            <div class="header-status">
+                <div id="status-info" class="status-info">Ready to visualize</div>
             </div>
-            <div class="button-group" style="margin-top: 1rem; grid-template-columns: repeat(3, 1fr);">
-                <button onclick="startKnapsack()" style="background: #7c3aed;">⚖️ 0/1 Knapsack</button>
-                <button onclick="startMCM()" style="background: #9333ea;">🧩 Matrix Chain</button>
-                <button onclick="startHuffman()" style="background: #a855f7;">🌳 Huffman Coding</button>
+        </header>
+
+        <!-- Main Dashboard -->
+        <main class="dashboard">
+            <div id="viz-glass" class="glass-panel" style="display: flex;">
+                <div id="bar-container" class="bar-container" style="display: none;"></div>
+                <div id="tree-container" class="tree-container" style="display: none; width: 100%; height: 100%;">
+                    <svg id="tree-svg" width="100%" height="100%"></svg>
+                </div>
+                <div id="knapsack-container" class="knapsack-container" style="display: none;"></div>
+                <div id="mcm-container" class="mcm-container" style="display: none;"></div>
+                <div id="huffman-container" class="huffman-container" style="display: none;"></div>
             </div>
-            <div class="speed-control">
-                <label for="speed-slider">Animation Speed</label>
-                <input type="range" id="speed-slider" min="1" max="400" value="50">
-                <span id="speed-value">50ms</span>
+        </main>
+
+        <!-- Right Panel: Data and Complexity -->
+        <aside class="data-panel">
+            <div class="data-card">
+                <h4>Analysis</h4>
+                <div class="complexity-grid">
+                    <div class="metric">
+                        <b>Time</b>
+                        <span id="time-complexity">—</span>
+                    </div>
+                    <div class="metric">
+                        <b>Space</b>
+                        <span id="space-complexity">—</span>
+                    </div>
+                </div>
             </div>
-        </div>
 
-        <div id="status-info" class="status-info"></div>
+            <div class="data-card" style="flex: 1; overflow-y: auto;">
+                <h4>Step Description</h4>
+                <div id="step-desc" style="font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5;">
+                    Select an algorithm to begin the visualization process.
+                </div>
+            </div>
+        </aside>
 
-        <div id="bar-container" class="bar-container">
-            <!-- Bars will be generated here -->
-        </div>
+        <!-- Footer: Code and Controls -->
+        <footer class="cockpit-footer">
+            <div class="code-panel">
+                <div id="pseudo-container">
+                    <!-- Pseudocode lines will be injected here -->
+                    <div class="code-line">// Select an algorithm to see logic</div>
+                </div>
+            </div>
 
-        <div id="tree-container" class="tree-container" style="display: none;">
-            <svg id="tree-svg" width="100%" height="500"></svg>
-        </div>
-
-        <div id="knapsack-container" class="knapsack-container" style="display: none;"></div>
-        <div id="mcm-container" class="mcm-container" style="display: none;"></div>
-        <div id="huffman-container" class="huffman-container" style="display: none;"></div>
+            <div class="control-bar">
+                <div class="playback-btns">
+                    <button class="btn-ctrl"><i class="icon-prev"></i></button>
+                    <button class="btn-ctrl btn-primary-ctrl" onclick="location.reload()">↺</button>
+                    <button class="btn-ctrl"><i class="icon-next"></i></button>
+                </div>
+                <div class="speed-slider-container">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.6875rem; color: var(--text-muted); font-weight: 700;">ANIMATION DELAY</span>
+                        <span id="speed-value" style="font-family: 'Space Mono', monospace; font-size: 0.6875rem; color: var(--primary);">50ms</span>
+                    </div>
+                    <input type="range" id="speed-slider" min="1" max="400" value="50">
+                </div>
+            </div>
+        </footer>
     </div>
 
     <script>
         const algoMetadata = {
-            'Merge Sort': {
-                complexity: 'O(n log n)', case: 'Stable'
-            },
-            'Quick Sort': {
-                complexity: 'O(n log n)', case: 'Unstable'
-            },
-            'Bubble Sort': {
-                complexity: 'O(n^2)', case: 'Stable'
-            },
-            'Insertion Sort': {
-                complexity: 'O(n^2)', case: 'Stable'
-            },
-            'Selection Sort': {
-                complexity: 'O(n^2)', case: 'Unstable'
-            }
+            'Merge Sort': { complexity: 'O(n log n)', space: 'O(n)', pseudo: [
+                "function mergeSort(arr):",
+                "  if len(arr) <= 1: return arr",
+                "  mid = len(arr) / 2",
+                "  left = mergeSort(arr[:mid])",
+                "  right = mergeSort(arr[mid:])",
+                "  return merge(left, right)"
+            ]},
+            'Quick Sort': { complexity: 'O(n log n)', space: 'O(log n)', pseudo: [
+                "function quickSort(arr, low, high):",
+                "  if low < high:",
+                "    pivot = partition(arr, low, high)",
+                "    quickSort(arr, low, pivot - 1)",
+                "    quickSort(arr, pivot + 1, high)"
+            ]},
+            'Bubble Sort': { complexity: 'O(n²)', space: 'O(1)', pseudo: [
+                "for i from 0 to n-1:",
+                "  for j from 0 to n-i-1:",
+                "    if arr[j] > arr[j+1]:",
+                "      swap(arr[j], arr[j+1])"
+            ]},
+            'Insertion Sort': { complexity: 'O(n²)', space: 'O(1)', pseudo: [
+                "for i from 1 to n:",
+                "  key = arr[i]",
+                "  j = i - 1",
+                "  while j >= 0 and arr[j] > key:",
+                "    arr[j+1] = arr[j]",
+                "    j = j - 1",
+                "  arr[j+1] = key"
+            ]},
+            'Selection Sort': { complexity: 'O(n²)', space: 'O(1)', pseudo: [
+                "for i from 0 to n-1:",
+                "  min_idx = i",
+                "  for j from i+1 to n:",
+                "    if arr[j] < arr[min_idx]:",
+                "      min_idx = j",
+                "  swap(arr[i], arr[min_idx])"
+            ]},
+            'Heap Sort': { complexity: 'O(n log n)', space: 'O(1)', pseudo: [
+                "buildMaxHeap(arr)",
+                "for i from n-1 down to 1:",
+                "  swap(arr[0], arr[i])",
+                "  heapify(arr, 0, i)"
+            ]},
+            'BST': { complexity: 'O(log n)', space: 'O(h)', pseudo: [
+                "function insert(root, key):",
+                "  if root is null: return Node(key)",
+                "  if key < root.key:",
+                "    root.left = insert(root.left, key)",
+                "  else:",
+                "    root.right = insert(root.right, key)",
+                "  return root"
+            ]},
+            'Knapsack': { complexity: 'O(nW)', space: 'O(nW)', pseudo: [
+                "for i from 0 to n:",
+                "  for w from 0 to W:",
+                "    if w[i] <= w:",
+                "      dp[i][w] = max(v[i] + dp[i-1][w-w[i]], dp[i-1][w])",
+                "    else:",
+                "      dp[i][w] = dp[i-1][w]"
+            ]},
+            'Matrix Chain': { complexity: 'O(n³)', space: 'O(n²)', pseudo: [
+                "for len from 2 to n:",
+                "  for i from 1 to n-len+1:",
+                "    j = i + len - 1",
+                "    m[i][j] = infinity",
+                "    for k from i to j-1:",
+                "      q = m[i][k] + m[k+1][j] + p[i-1]p[k]p[j]",
+                "      if q < m[i][j]: m[i][j] = q"
+            ]},
+            'Huffman': { complexity: 'O(n log n)', space: 'O(n)', pseudo: [
+                "while Q.size > 1:",
+                "  left = Q.extractMin()",
+                "  right = Q.extractMin()",
+                "  new_node = merge(left, right)",
+                "  Q.insert(new_node)"
+            ]}
         };
 
-        const verticalGAP = 80;
-        let treeBuilt = false;
-        let treeBaseGap = 220;
-        let treeCenterX = 450;
-        const treeNodes = {}; // global: id -> { x, y, val }
+        const statusElement = document.getElementById('status-info');
+        const activeAlgoName = document.getElementById('active-algo-name');
+        const timeComp = document.getElementById('time-complexity');
+        const spaceComp = document.getElementById('space-complexity');
+        const stepDesc = document.getElementById('step-desc');
+        const pseudoContainer = document.getElementById('pseudo-container');
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValue = document.getElementById('speed-value');
 
+        let animationSpeed = parseInt(speedSlider.value);
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        function getpos(parentX, parentY, depth, direction, baseGap) {
-            const xoffset = baseGap / Math.pow(2, depth - 1);
-            const x = (direction === 'L') ? parentX - xoffset : parentX + xoffset;
-            const y = parentY + verticalGAP;
-            return { x, y };
+        speedSlider.oninput = function() {
+            animationSpeed = parseInt(this.value);
+            speedValue.innerText = `${this.value}ms`;
+        };
+
+        function updateMetadata(name) {
+            const meta = algoMetadata[name] || { complexity: '—', space: '—', pseudo: ["// No logic available"] };
+            activeAlgoName.textContent = name;
+            timeComp.textContent = meta.complexity;
+            spaceComp.textContent = meta.space;
+            
+            pseudoContainer.innerHTML = '';
+            meta.pseudo.forEach((line, idx) => {
+                const div = document.createElement('div');
+                div.className = 'code-line';
+                div.id = `pseudo-L${idx}`;
+                div.textContent = line;
+                pseudoContainer.appendChild(div);
+            });
         }
 
-        function drawNode(svg, id, x, y, val, pid) {
-            if (pid !== '-1' && treeNodes[pid]) {
-                const p = treeNodes[pid];
-                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                line.setAttribute("x1", p.x); line.setAttribute("y1", p.y);
-                line.setAttribute("x2", x);   line.setAttribute("y2", y);
-                line.classList.add("edge");
-                svg.appendChild(line);
-            }
-            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute("cx", x); circle.setAttribute("cy", y);
-            circle.setAttribute("r", 20); circle.setAttribute("id", `node-${id}`);
-            circle.classList.add("node");
-            svg.appendChild(circle);
-
-            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("x", x); text.setAttribute("y", y + 5);
-            text.setAttribute("text-anchor", "middle");
-            text.classList.add("node-text");
-            text.textContent = val;
-            svg.appendChild(text);
-        }
-
-        async function buildTree(svg, steps, animated) {
-            const nodeCount = steps.filter(s => s.startsWith('NODE')).length;
-            treeBaseGap = Math.max(220, nodeCount * 25);
-            treeCenterX = svg.getBoundingClientRect().width / 2 || 450;
-
-            for (const step of steps) {
-                const parts = step.split(' ');
-                const stepType = parts[0];
-
-                if (stepType === 'NODE') {
-                    const id = parts[1], val = parts[2], pid = parts[3], dir = parts[4];
-                    let x, y;
-                    if (pid === '-1') {
-                        x = treeCenterX; y = 50;
-                    } else {
-                        const parent = treeNodes[pid];
-                        const depth = Math.floor((parent.y - 50) / verticalGAP) + 1;
-                        const pos = getpos(parent.x, parent.y, depth, dir, treeBaseGap);
-                        x = pos.x; y = pos.y;
-                    }
-                    treeNodes[id] = { x, y, val };
-                    drawNode(svg, id, x, y, val, pid);
-                    if (animated) await sleep(animationSpeed);
-
-                } else if (stepType === 'CMP' && animated) {
-                    const nodeEl = document.getElementById(`node-${parts[1]}`);
-                    if (nodeEl) {
-                        nodeEl.classList.add('comparing');
-                        await sleep(animationSpeed);
-                        nodeEl.classList.remove('comparing');
-                    }
-                }
-            }
-            treeBuilt = true;
+        function highlightPseudo(lineIdx) {
+            document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+            const el = document.getElementById(`pseudo-L${lineIdx}`);
+            if (el) el.classList.add('active');
         }
 
         function setView(active) {
-            container.style.display = (active === 'bars') ? 'flex' : 'none';
+            // Updated for cockpit layout
+            document.getElementById('viz-glass').style.display = 'flex';
+            document.getElementById('bar-container').style.display = (active === 'bars') ? 'flex' : 'none';
             document.getElementById('tree-container').style.display = (active === 'tree') ? 'block' : 'none';
             document.getElementById('knapsack-container').style.display = (active === 'knapsack') ? 'block' : 'none';
             document.getElementById('mcm-container').style.display = (active === 'mcm') ? 'block' : 'none';
             document.getElementById('huffman-container').style.display = (active === 'huffman') ? 'block' : 'none';
-        }
-
-        async function startMCM() {
-            setView('mcm');
-            statusElement.innerHTML = `<span class="complexity-info">Running Matrix Chain Multiplication...</span>`;
             
-            const response = await fetch('/mcm');
-            const data = await response.json();
-            const container = document.getElementById('mcm-container');
-            container.innerHTML = '<h3>Matrix Chain Multiplication — DP Table</h3>';
-            
-            let n = 0;
-            const dims = [];
-            for (const step of data.steps) {
-                const parts = step.split(' ');
-                if (parts[0] === 'CONFIG') n = parseInt(parts[1]);
-                if (parts[0] === 'DIM') dims.push({ i: parts[1], r: parts[2], c: parts[3] });
-            }
-
-            const dimsDiv = document.createElement('div');
-            dimsDiv.className = 'mcm-dims';
-            dims.forEach(d => {
-                const span = document.createElement('span');
-                span.className = 'mcm-dim-badge';
-                span.textContent = `M${d.i}: ${d.r}×${d.c}`;
-                dimsDiv.appendChild(span);
+            // Highlight nav button
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.includes(active === 'bars' ? 'Sort' : active.toUpperCase()));
             });
-            container.appendChild(dimsDiv);
-
-            const table = document.createElement('table');
-            table.className = 'dp-table';
-            
-            // Header
-            const hrow = document.createElement('tr');
-            hrow.innerHTML = `<th class="dp-corner">i\\j</th>`;
-            for (let j = 1; j <= n; j++) hrow.innerHTML += `<th class="dp-col-header">${j}</th>`;
-            table.appendChild(hrow);
-
-            for (let i = 1; i <= n; i++) {
-                const row = document.createElement('tr');
-                row.innerHTML = `<th class="dp-row-header"><span>Row ${i}</span></th>`;
-                for (let j = 1; j <= n; j++) {
-                    const td = document.createElement('td');
-                    td.id = `mcm-cell-${i}-${j}`;
-                    td.className = 'dp-cell';
-                    if (i > j) td.classList.add('dp-inactive');
-                    else if (i === j) {
-                        td.classList.add('dp-diagonal');
-                        td.textContent = '0';
-                    } else td.textContent = '∞';
-                    row.appendChild(td);
-                }
-                table.appendChild(row);
-            }
-            container.appendChild(table);
-
-            for (const step of data.steps) {
-                const parts = step.split(' ');
-                if (parts[0] === 'CELL') {
-                    const i = parts[1], j = parts[2], val = parts[3];
-                    const cell = document.getElementById(`mcm-cell-${i}-${j}`);
-                    cell.textContent = val;
-                    cell.classList.add('dp-filling');
-                    await sleep(animationSpeed);
-                    cell.classList.remove('dp-filling');
-                    cell.classList.add('dp-filled');
-                    if (i == 1 && j == n) cell.classList.add('dp-optimal-cell');
-                } else if (parts[0] === 'OPTIMAL') {
-                    const optDiv = document.createElement('div');
-                    optDiv.className = 'mcm-optimal';
-                    optDiv.innerHTML = `<strong>Min Cost: ${parts[1]}</strong><br>Optimal Parantheses: ${parts[2]}`;
-                    container.appendChild(optDiv);
-                    statusElement.innerHTML = `<span class="success-text">MCM Complete! Optimal Cost: ${parts[1]}</span>`;
-                }
-            }
         }
 
-        async function startHuffman() {
-            setView('huffman');
-            statusElement.innerHTML = `<span class="complexity-info">Running Huffman Coding...</span>`;
+        // Sorting Logic Integration
+        async function runSortViz(endpoint, algoName) {
+            setView('bars');
+            updateMetadata(algoName);
+            statusElement.innerText = "Running " + algoName + "...";
+            stepDesc.innerText = "Initializing array and streaming steps from C++ backend.";
+            
+            const barsContainer = document.getElementById('bar-container');
+            barsContainer.innerHTML = '';
+            let arr = [120, 350, 50, 560, 200, 410, 80, 5, 290, 480, 150, 310, 220, 600, 100, 450, 30, 520, 180, 390];
+            arr.forEach(v => {
+                const b = document.createElement('div');
+                b.className = 'bar';
+                b.style.height = `${v * 0.15}px`;
+                barsContainer.appendChild(b);
+            });
+            const bars = barsContainer.getElementsByClassName('bar');
 
-            const response = await fetch('/huffman');
+            const response = await fetch(endpoint);
             const data = await response.json();
-            const container = document.getElementById('huffman-container');
-            container.innerHTML = '<h3>Huffman Coding — Tree & Codes</h3>';
-
-            const logDiv = document.createElement('div');
-            logDiv.className = 'huff-log';
-            container.appendChild(logDiv);
-
-            const qDiv = document.createElement('div');
-            qDiv.className = 'huff-queue';
-            container.appendChild(qDiv);
-
-            const svgDiv = document.createElement('div');
-            svgDiv.className = 'tree-container';
-            svgDiv.innerHTML = '<svg id="huff-svg" width="100%" height="400"></svg>';
-            container.appendChild(svgDiv);
-
-            const codesDiv = document.createElement('div');
-            codesDiv.className = 'huff-code-section';
-            codesDiv.innerHTML = '<h4>Character Codes</h4><table class="dp-table" id="huff-code-table"><tr><th class="dp-col-header">Char</th><th class="dp-col-header">Code</th></tr></table>';
-            container.appendChild(codesDiv);
-
-            const svg = document.getElementById('huff-svg');
-            const nodes = {};
-            const centerX = svg.clientWidth / 2 || 450;
-            let stepNum = 1;
 
             for (const step of data.steps) {
                 const parts = step.split(' ');
-                if (parts[0] === 'LEAF') {
-                    const id = parts[1], ch = parts[2], fr = parts[3];
-                    const card = document.createElement('div');
-                    card.id = `huff-card-${id}`;
-                    card.className = 'huff-card';
-                    card.innerHTML = `<b>${ch}</b><small>${fr}</small>`;
-                    qDiv.appendChild(card);
-                } else if (parts[0] === 'MERGE') {
-                    const l = parts[1], r = parts[2], id = parts[3], fr = parts[4];
-                    const cl = document.getElementById(`huff-card-${l}`);
-                    const cr = document.getElementById(`huff-card-${r}`);
-                    
-                    cl.classList.add('huff-extracting');
+                if (parts[0] === 'CMP') {
+                    const i = parseInt(parts[1]), j = parseInt(parts[2]);
+                    bars[i]?.classList.add('comparing');
+                    bars[j]?.classList.add('comparing');
+                    stepDesc.innerText = `Comparing index ${i} and ${j}.`;
+                    highlightPseudo(2);
                     await sleep(animationSpeed);
-                    cr.classList.add('huff-extracting');
+                    bars[i]?.classList.remove('comparing');
+                    bars[j]?.classList.remove('comparing');
+                } else if (parts[0] === 'UPD') {
+                    const i = parseInt(parts[1]), val = parseInt(parts[2]);
+                    if(bars[i]) bars[i].style.height = `${val * 0.15}px`;
+                    stepDesc.innerText = `Updating index ${i} to value ${val}.`;
+                    highlightPseudo(3);
                     await sleep(animationSpeed);
+                }
+            }
+            for (let b of bars) b.classList.add('sorted');
+            statusElement.innerHTML = `<span style="color:var(--secondary)">${algoName} Sorted Successfully!</span>`;
+            stepDesc.innerText = "Algorithm finished. Array is now in sorted order.";
+        }
 
-                    const entry = document.createElement('div');
-                    entry.className = 'huff-log-entry';
-                    entry.innerHTML = `<span class="huff-step-num">#${stepNum++}</span> Merged nodes ${l} and ${r} → New freq ${fr}`;
-                    logDiv.appendChild(entry);
-                    logDiv.scrollTop = logDiv.scrollHeight;
+        window.startMergeSort = () => runSortViz('/mergesort', 'Merge Sort');
+        window.startQuickSort = () => runSortViz('/quicksort', 'Quick Sort');
+        window.startHeapSort = () => runSortViz('/heapsort', 'Heap Sort');
+        window.startbubbleSort = () => runSortViz('/bubblesort', 'Bubble Sort');
+        window.startInsertionSort = () => runSortViz('/insertionsort', 'Insertion Sort');
+        window.startSelectionSort = () => runSortViz('/selectionsort', 'Selection Sort');
 
-                    cl.classList.remove('huff-extracting');
-                    cr.classList.remove('huff-extracting');
-                    cl.classList.add('huff-extracted');
-                    cr.classList.add('huff-extracted');
+        // Trees
+        const treeNodes = {};
+        const verticalGAP = 80;
+        let treeBuilt = false;
 
-                    const card = document.createElement('div');
-                    card.id = `huff-card-${id}`;
-                    card.className = 'huff-card huff-internal';
-                    card.innerHTML = `<b>*</b><small>${fr}</small>`;
-                    qDiv.appendChild(card);
-                    await sleep(animationSpeed);
+        async function buildTree(svg, steps, animated) {
+            const nodeCount = steps.filter(s => s.startsWith('NODE')).length;
+            const treeBaseGap = Math.max(220, nodeCount * 25);
+            const centerX = svg.clientWidth / 2 || 450;
+            const centerY = 50;
 
-                } else if (parts[0] === 'TNODE') {
-                    const id = parts[1], pid = parts[2], dir = parts[3], fr = parts[4], lbl = parts[5];
+            for (const step of steps) {
+                const parts = step.split(' ');
+                if (parts[0] === 'NODE') {
+                    const id = parts[1], val = parts[2], pid = parts[3], dir = parts[4];
                     let x, y;
-                    if (pid === '-1') { x = centerX; y = 40; }
+                    if (pid === '-1') { x = centerX; y = centerY; }
                     else {
-                        const p = nodes[pid];
-                        const depth = Math.floor((p.y - 40) / 70) + 1;
-                        const xoffset = 180 / Math.pow(2, depth - 1);
+                        const p = treeNodes[pid];
+                        const depth = Math.floor((p.y - centerY) / verticalGAP) + 1;
+                        const xoffset = treeBaseGap / Math.pow(2, depth - 1);
                         x = (dir === 'L') ? p.x - xoffset : p.x + xoffset;
-                        y = p.y + 70;
-
+                        y = p.y + verticalGAP;
                         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
                         line.setAttribute("x1", p.x); line.setAttribute("y1", p.y);
                         line.setAttribute("x2", x);   line.setAttribute("y2", y);
                         line.classList.add("edge");
                         svg.appendChild(line);
                     }
-                    nodes[id] = { x, y };
-                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                    circle.setAttribute("cx", x); circle.setAttribute("cy", y);
-                    circle.setAttribute("r", 18);
-                    circle.id = `huff-node-${id}`;
-                    circle.setAttribute("class", (lbl==='*') ? "node" : "node huff-leaf-circle");
-                    svg.appendChild(circle);
-
+                    treeNodes[id] = { x, y, val };
+                    const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circ.setAttribute("cx", x); circ.setAttribute("cy", y); circ.setAttribute("r", 20);
+                    circ.setAttribute("id", `node-${id}`); circ.classList.add("node");
+                    svg.appendChild(circ);
                     const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                    txt.setAttribute("x", x); txt.setAttribute("y", y + 4);
-                    txt.setAttribute("text-anchor", "middle");
-                    txt.setAttribute("class", "node-text");
-                    txt.textContent = (lbl==='*') ? fr : lbl;
+                    txt.setAttribute("x", x); txt.setAttribute("y", y + 5); txt.setAttribute("text-anchor", "middle");
+                    txt.classList.add("node-text"); txt.textContent = val;
                     svg.appendChild(txt);
-                    await sleep(animationSpeed / 2);
-
-                } else if (parts[0] === 'CODE') {
-                    const table = document.getElementById('huff-code-table');
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td class="dp-cell dp-filled">${parts[1]}</td><td class="dp-cell dp-filled">${parts[2]}</td>`;
-                    table.appendChild(row);
+                    stepDesc.innerText = `Inserted node ${val} into the BST.`;
+                    highlightPseudo(3);
+                    if (animated) await sleep(animationSpeed);
+                } else if (parts[0] === 'CMP' && animated) {
+                    const el = document.getElementById(`node-${parts[1]}`);
+                    el?.classList.add('comparing');
+                    await sleep(animationSpeed);
+                    el?.classList.remove('comparing');
                 }
             }
-            statusElement.innerHTML = `<span class="success-text">Huffman Coding Complete!</span>`;
+            treeBuilt = true;
         }
 
+        async function startTreeVisualizer(type) {
+            setView('tree');
+            updateMetadata('BST');
+            const svg = document.getElementById('tree-svg');
+            if (type === 'build') {
+                svg.innerHTML = '';
+                Object.keys(treeNodes).forEach(k => delete treeNodes[k]);
+                treeBuilt = false;
+                const res = await fetch('/tree/build');
+                const data = await res.json();
+                await buildTree(svg, data.steps, true);
+            } else {
+                if (!treeBuilt) {
+                    svg.innerHTML = '';
+                    const res = await fetch('/tree/build');
+                    const data = await res.json();
+                    await buildTree(svg, data.steps, false);
+                }
+                document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+                const res = await fetch(`/tree/${type}`);
+                const data = await res.json();
+                for (const step of data.steps) {
+                    if (step.startsWith('ACT')) {
+                        const id = step.split(' ')[1];
+                        document.getElementById(`node-${id}`)?.classList.add('active');
+                        stepDesc.innerText = `Visiting node with value ${treeNodes[id]?.val || '?'}.`;
+                        await sleep(animationSpeed);
+                    }
+                }
+            }
+            statusElement.innerText = type.toUpperCase() + " Complete";
+        }
 
+        // Advanced Algorithms (Re-implemented with new UI support)
         async function startKnapsack() {
-            setView('knapsack');
-            statusElement.innerHTML = `<span class="complexity-info">Running 0/1 Knapsack DP...</span>`;
-
+            setView('knapsack'); updateMetadata('Knapsack');
             const response = await fetch('/knapsack');
             const data = await response.json();
-
             const kDiv = document.getElementById('knapsack-container');
-            kDiv.innerHTML = '<h3>0/1 Knapsack — DP Table (dp[item][capacity])</h3>';
-
+            kDiv.innerHTML = '<table class="dp-table" id="kp-table"></table>';
+            const table = document.getElementById('kp-table');
+            
             let n = 0, W = 0;
             const itemDefs = {};
             for (const step of data.steps) {
@@ -362,385 +407,137 @@
                 else if (parts[0] === 'DEF') { itemDefs[parseInt(parts[1])] = { w: parseInt(parts[2]), v: parseInt(parts[3]) }; }
             }
 
-            // Build table
-            const table = document.createElement('table');
-            table.className = 'dp-table';
-
-            // Header row
             const hdr = document.createElement('tr');
-            const corner = document.createElement('th');
-            corner.textContent = 'Item \ Cap';
-            corner.className = 'dp-corner';
-            hdr.appendChild(corner);
-            for (let j = 0; j <= W; j++) {
-                const th = document.createElement('th');
-                th.textContent = j;
-                th.className = 'dp-col-header';
-                hdr.appendChild(th);
-            }
+            hdr.innerHTML = '<th class="dp-cell">Item\\Cap</th>' + Array.from({length: W + 1}, (_, i) => `<th class="dp-cell">${i}</th>`).join('');
             table.appendChild(hdr);
 
-            // Data rows
             for (let i = 0; i <= n; i++) {
                 const tr = document.createElement('tr');
-                const th = document.createElement('th');
-                th.id = `row-hdr-${i}`;
-                th.className = 'dp-row-header';
-                if (i === 0) {
-                    th.innerHTML = '<span>∅ (none)</span><small>baseline</small>';
-                } else {
-                    const it = itemDefs[i];
-                    th.innerHTML = `<span>Item ${i}</span><small>w=${it.w}, v=${it.v}</small>`;
-                }
-                tr.appendChild(th);
-                for (let j = 0; j <= W; j++) {
-                    const td = document.createElement('td');
-                    td.id = `cell-${i}-${j}`;
-                    td.className = 'dp-cell';
-                    td.textContent = '–';
-                    tr.appendChild(td);
-                }
+                tr.innerHTML = `<td class="dp-cell">${i === 0 ? '∅' : 'I'+i}</td>` + Array.from({length: W + 1}, (_, j) => `<td class="dp-cell" id="kp-${i}-${j}">–</td>`).join('');
                 table.appendChild(tr);
             }
-            kDiv.appendChild(table);
 
-            // Animate steps
             for (const step of data.steps) {
                 const parts = step.split(' ');
                 if (parts[0] === 'CELL') {
-                    const i = parseInt(parts[1]), j = parseInt(parts[2]), val = parseInt(parts[3]);
-                    const cell = document.getElementById(`cell-${i}-${j}`);
+                    const i = parts[1], j = parts[2], val = parts[3];
+                    const cell = document.getElementById(`kp-${i}-${j}`);
                     if (cell) {
                         cell.textContent = val;
                         cell.classList.add('dp-filling');
+                        stepDesc.innerText = `Calculating dp[${i}][${j}] = ${val}.`;
+                        highlightPseudo(3);
                         await sleep(animationSpeed);
                         cell.classList.remove('dp-filling');
                         cell.classList.add('dp-filled');
                     }
                 } else if (parts[0] === 'PICK') {
-                    const i = parseInt(parts[1]);
-                    document.getElementById(`row-hdr-${i}`)?.classList.add('dp-picked');
-                    for (let j = 0; j <= W; j++)
-                        document.getElementById(`cell-${i}-${j}`)?.classList.add('dp-picked');
-                    await sleep(animationSpeed * 3);
-                } else if (parts[0] === 'MAX') {
-                    statusElement.innerHTML = `<span class="success-text">Max Value = ${parts[1]}</span><span class="complexity-info">0/1 Knapsack · O(nW) time &amp; space</span>`;
-                }
-            }
-        }
-
-        async function startTreeVisualizer(type = 'build') {
-            setView('tree');
-            statusElement.innerHTML = `<span class="complexity-info">Running ${type.toUpperCase()}...</span>`;
-
-            const svg = document.getElementById('tree-svg');
-
-            if (type === 'build') {
-                // Full clear and animated rebuild
-                svg.innerHTML = '';
-                Object.keys(treeNodes).forEach(k => delete treeNodes[k]);
-                treeBuilt = false;
-                await sleep(50); // let browser compute SVG width
-                const response = await fetch('/tree/build');
-                const data = await response.json();
-                await buildTree(svg, data.steps, true);
-
-            } else {
-                // Traversal: ensure tree is drawn first
-                if (!treeBuilt) {
-                    svg.innerHTML = '';
-                    Object.keys(treeNodes).forEach(k => delete treeNodes[k]);
-                    await sleep(50);
-                    // Build silently (instant) from build endpoint
-                    const buildRes = await fetch('/tree/build');
-                    const buildData = await buildRes.json();
-                    await buildTree(svg, buildData.steps, false);
-                }
-
-                // Clear previous traversal highlights
-                document.querySelectorAll('#tree-svg .node').forEach(n => {
-                    n.classList.remove('active', 'comparing');
-                });
-
-                // Fetch and animate traversal ACT steps only
-                const response = await fetch(`/tree/${type}`);
-                const data = await response.json();
-
-                for (const step of data.steps) {
-                    const parts = step.split(' ');
-                    if (parts[0] === 'ACT') {
-                        const nodeEl = document.getElementById(`node-${parts[1]}`);
-                        if (nodeEl) {
-                            nodeEl.classList.add('active');
-                            await sleep(animationSpeed);
-                        }
-                    }
-                }
-            }
-
-            statusElement.innerHTML = `<span class="success-text">${type.toUpperCase()} Complete!</span>`;
-        }
-
-
-
-        const container = document.getElementById('bar-container');
-        const statusElement = document.getElementById('status-info');
-        const speedSlider = document.getElementById('speed-slider');
-        const speedValue = document.getElementById('speed-value');
-
-        let animationSpeed = parseInt(speedSlider.value);
-        let array = [120, 350, 50, 560, 200, 410, 80, 5, 290, 480, 150, 310, 220, 600, 100, 450, 30, 520, 180, 390];
-
-        speedSlider.oninput = function () {
-            animationSpeed = parseInt(this.value);
-            speedValue.innerText = `${this.value}ms`;
-        }
-
-        function createBars() {
-            container.innerHTML = '';
-            statusElement.innerHTML = '';
-            array.forEach(value => {
-                const bar = document.createElement('div');
-                bar.classList.add('bar');
-                bar.style.height = `${value * 0.5}px`;
-                container.appendChild(bar);
-            });
-        }
-
-        function onSortComplete(algoName) {
-            const meta = algoMetadata[algoName];
-            statusElement.innerHTML = `
-                <span class="success-text">Array Sorted!</span>
-                <span class="complexity-info">Time Complexity: ${meta.complexity}</span>
-            `;
-        }
-
-
-        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-
-        async function startSelectionSort() {
-            setView('bars');
-            const response = await fetch('/selectionsort');
-            const data = await response.json();
-            const bars = document.getElementsByClassName('bar');
-
-            for (const step of data.steps) {
-                const parts = step.split(" ");
-                if (parts.length < 3) continue;
-
-                const type = parts[0];
-                const i = parseInt(parts[1]);
-                const j = parseInt(parts[2]);
-
-                if (type === 'CMP') {
-                    if (bars[i] && bars[j]) {
-                        bars[i].style.backgroundColor = '#f59e0b';
-                        bars[j].style.backgroundColor = '#f59e0b';
-                        await sleep(animationSpeed);
-                        bars[i].style.backgroundColor = '#6366f1';
-                        bars[j].style.backgroundColor = '#6366f1';
-                    }
-                } else if (type === 'UPD') {
-                    if (bars[i]) {
-                        bars[i].style.height = `${j * 0.5}px`;
-                        bars[i].style.backgroundColor = '#f59e0b';
-                        await sleep(animationSpeed);
-                        bars[i].style.backgroundColor = '#6366f1';
-                    }
-                }
-            }
-            for (let bar of bars) {
-                bar.style.backgroundColor = '#10b981';
-            }
-            onSortComplete('Selection Sort');
-        }
-
-        async function startInsertionSort() {
-            setView('bars');
-            const response = await fetch('/insertionsort');
-            const data = await response.json();
-            const bars = document.getElementsByClassName('bar')
-
-            for (const step of data.steps) {
-                const parts = step.split(" ");
-                if (parts.length < 3) continue;
-
-                const type = parts[0];
-                const i = parseInt(parts[1]);
-                const j = parseInt(parts[2]);
-
-                if (type === 'CMP') {
-                    if (bars[i] && bars[j]) {
-                        bars[i].style.backgroundColor = '#f59e0b';
-                        bars[j].style.backgroundColor = '#f59e0b';
-                        await sleep(animationSpeed);
-                        bars[i].style.backgroundColor = '#6366f1';
-                        bars[j].style.backgroundColor = '#6366f1';
-                    }
-                } else if (type === 'UPD') {
-                    if (bars[i]) {
-                        bars[i].style.height = `${j * 0.5}px`;
-                        bars[i].style.backgroundColor = '#f59e0b';
-                        await sleep(animationSpeed);
-                        bars[i].style.backgroundColor = '#6366f1';
-                    }
-                }
-            }
-            for (let bar of bars) {
-                bar.style.backgroundColor = '#10b981';
-            }
-            onSortComplete('Insertion Sort');
-        }
-
-
-        async function startHeapSort() {
-            setView('bars');
-            const response = await fetch('/heapsort');
-            const data = await response.json();
-            const bars = document.getElementsByClassName('bar');
-
-            for (const step of data.steps) {
-                const parts = step.split(' ');
-                if (parts.length < 3) continue;
-
-                const type = parts[0];
-                const i = parseInt(parts[1]);
-                const j = parseInt(parts[2]);
-
-                if (type === 'CMP') {
-                    if (bars[i] && bars[j]) {
-                        bars[i].style.backgroundColor = '#f59e0b';
-                        bars[j].style.backgroundColor = '#f59e0b';
-                        await sleep(animationSpeed);
-                        bars[i].style.backgroundColor = '#6366f1';
-                        bars[j].style.backgroundColor = '#6366f1';
-                    }
-                } else if (type === 'UPD') {
-                    if (bars[i]) {
-                        bars[i].style.height = `${j * 0.5}px`;
-                        bars[i].style.backgroundColor = '#f59e0b';
-                        await sleep(animationSpeed);
-                        bars[i].style.backgroundColor = '#6366f1';
-                    }
-                }
-            }
-            for (let bar of bars) {
-                bar.style.backgroundColor = '#10b981';
-            }
-            onSortComplete('Heap Sort');
-        }
-
-        async function startMergeSort() {
-            setView('bars');
-            const response = await fetch('/mergesort');
-            const data = await response.json();
-            const bars = document.getElementsByClassName('bar');
-
-            for (const step of data.steps) {
-                const parts = step.split(' ');
-                if (parts.length < 3) continue;
-
-                const type = parts[0];
-                const i = parseInt(parts[1]);
-                const j = parseInt(parts[2]);
-
-                if (type === 'CMP') {
-                    if (bars[i] && bars[j]) {
-                        bars[i].style.backgroundColor = '#f59e0b';
-                        bars[j].style.backgroundColor = '#f59e0b';
-                        await sleep(animationSpeed);
-                        bars[i].style.backgroundColor = '#6366f1';
-                        bars[j].style.backgroundColor = '#6366f1';
-                    }
-                } else if (type === 'UPD') {
-                    if (bars[i]) {
-                        bars[i].style.height = `${j * 0.5}px`;
-                        bars[i].style.backgroundColor = '#f59e0b';
-                        await sleep(animationSpeed);
-                        bars[i].style.backgroundColor = '#6366f1';
-                    }
-                }
-            }
-
-            for (let bar of bars) {
-                bar.style.backgroundColor = '#10b981';
-            }
-            onSortComplete('Merge Sort');
-        }
-
-
-        async function startbubbleSort() {
-            setView('bars');
-            const response = await fetch('/bubblesort');
-            const data = await response.json();
-            const bars = document.getElementsByClassName('bar')
-
-            for (const step of data.steps) {
-                const parts = step.split(' ');
-                if (parts.length < 3) continue;
-
-                const type = parts[0];
-                const i = parseInt(parts[1]);
-                const j = parseInt(parts[2]);
-
-                if (type == 'CMP') {
-                    if (bars[i] && bars[j]) {
-                        bars[i].style.backgroundColor = '#f59e0b';
-                        bars[j].style.backgroundColor = '#f59e0b';
-                        await sleep(animationSpeed);
-                        bars[i].style.backgroundColor = '#6366f1';
-                        bars[j].style.backgroundColor = '#6366f1';
-                    }
-                } else if (type == 'UPD') {
-                    if (bars[i]) {
-                        bars[i].style.height = `${j * 0.5}px`;
-                        bars[i].style.backgroundColor = '#f59e0b';
-                        await sleep(animationSpeed);
-                        bars[i].style.backgroundColor = '#6366f1';
-                    }
-                }
-            }
-            for (let bar of bars) {
-                bar.style.backgroundColor = '#10b981';
-            }
-            onSortComplete('Bubble Sort');
-        }
-
-        async function startQuickSort() {
-            setView('bars');
-            const response = await fetch('/quicksort');
-            const data = await response.json();
-            const bars = document.getElementsByClassName('bar');
-
-            for (const step of data.steps) {
-                const parts = step.split(' ');
-                const type = parts[0];
-                const i = parseInt(parts[1]);
-                const j = parseInt(parts[2]);
-
-                if (type === 'CMP') {
-                    bars[i].style.backgroundColor = '#f59e0b';
-                    bars[j].style.backgroundColor = '#f59e0b';
+                    const i = parts[1];
+                    stepDesc.innerText = `Backtracking: Item ${i} was picked.`;
+                    highlightPseudo(3);
                     await sleep(animationSpeed);
-                    bars[i].style.backgroundColor = '#6366f1';
-                    bars[j].style.backgroundColor = '#6366f1';
-                } else if (type === 'UPD') {
-                    bars[i].style.height = `${j * 0.5}px`;
-                    bars[i].style.backgroundColor = '#f59e0b';
-                    await sleep(animationSpeed);
-                    bars[i].style.backgroundColor = '#6366f1';
                 }
             }
-            for (let bar of bars) {
-                bar.style.backgroundColor = '#10b981';
-            }
-            onSortComplete('Quick Sort');
+            statusElement.innerText = "Knapsack Complete";
         }
 
+        async function startMCM() {
+            setView('mcm'); updateMetadata('Matrix Chain');
+            const response = await fetch('/mcm');
+            const data = await response.json();
+            const container = document.getElementById('mcm-container');
+            container.innerHTML = '<table class="dp-table" id="mcm-table"></table>';
+            const table = document.getElementById('mcm-table');
+            
+            let n = 0;
+            for (const step of data.steps) if (step.startsWith('CONFIG')) n = parseInt(step.split(' ')[1]);
 
-        createBars();
+            for (let i = 1; i <= n; i++) {
+                const tr = document.createElement('tr');
+                for (let j = 1; j <= n; j++) {
+                    const td = document.createElement('td');
+                    td.id = `mcm-${i}-${j}`;
+                    td.className = 'dp-cell';
+                    if (i > j) td.style.opacity = '0.2';
+                    else if (i === j) td.textContent = '0';
+                    else td.textContent = '∞';
+                    tr.appendChild(td);
+                }
+                table.appendChild(tr);
+            }
+
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                if (parts[0] === 'CELL') {
+                    const i = parts[1], j = parts[2], val = parts[3];
+                    const cell = document.getElementById(`mcm-${i}-${j}`);
+                    if (cell) {
+                        cell.textContent = val;
+                        cell.classList.add('dp-filling');
+                        stepDesc.innerText = `Filling MCM cell [${i},${j}] with cost ${val}.`;
+                        highlightPseudo(5);
+                        await sleep(animationSpeed);
+                        cell.classList.remove('dp-filling');
+                        cell.classList.add('dp-filled');
+                    }
+                }
+            }
+            statusElement.innerText = "MCM Complete";
+        }
+
+        async function startHuffman() {
+            setView('huffman'); updateMetadata('Huffman');
+            const response = await fetch('/huffman');
+            const data = await response.json();
+            const container = document.getElementById('huffman-container');
+            container.innerHTML = '<div class="huff-queue" id="huff-q"></div><div class="tree-container"><svg id="huff-svg" width="100%" height="300"></svg></div>';
+            const q = document.getElementById('huff-q');
+            const svg = document.getElementById('huff-svg');
+            const centerX = svg.clientWidth / 2 || 400;
+            const hNodes = {};
+
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                if (parts[0] === 'LEAF') {
+                    const card = document.createElement('div');
+                    card.className = 'metric';
+                    card.style.background = 'var(--surface-container-high)';
+                    card.style.padding = '0.5rem';
+                    card.style.borderRadius = '4px';
+                    card.innerHTML = `<b>${parts[2]}</b><span>${parts[3]}</span>`;
+                    q.appendChild(card);
+                } else if (parts[0] === 'TNODE') {
+                    const id = parts[1], pid = parts[2], dir = parts[3], fr = parts[4], lbl = parts[5];
+                    let x, y;
+                    if (pid === '-1') { x = centerX; y = 30; }
+                    else {
+                        const p = hNodes[pid];
+                        const depth = Math.floor((p.y - 30) / 60) + 1;
+                        const xoffset = 120 / Math.pow(2, depth - 1);
+                        x = (dir === 'L') ? p.x - xoffset : p.x + xoffset;
+                        y = p.y + 60;
+                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        line.setAttribute("x1", p.x); line.setAttribute("y1", p.y);
+                        line.setAttribute("x2", x);   line.setAttribute("y2", y);
+                        line.classList.add("edge");
+                        svg.appendChild(line);
+                    }
+                    hNodes[id] = { x, y };
+                    const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circ.setAttribute("cx", x); circ.setAttribute("cy", y); circ.setAttribute("r", 15);
+                    circ.className.baseVal = "node";
+                    svg.appendChild(circ);
+                    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    txt.setAttribute("x", x); txt.setAttribute("y", y + 4); txt.setAttribute("text-anchor", "middle");
+                    txt.classList.add("node-text"); txt.textContent = lbl === '*' ? fr : lbl;
+                    svg.appendChild(txt);
+                    stepDesc.innerText = `Merging/Creating node for ${lbl === '*' ? 'internal' : lbl} with freq ${fr}.`;
+                    highlightPseudo(3);
+                    await sleep(animationSpeed);
+                }
+            }
+            statusElement.innerText = "Huffman Complete";
+        }
     </script>
 </body>
-
 </html>
