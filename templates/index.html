@@ -29,6 +29,9 @@
                 <button onclick="startTreeVisualizer('preorder')" style="background: #047857;">BST: Preorder</button>
                 <button onclick="startTreeVisualizer('postorder')" style="background: #065f46;">BST: Postorder</button>
             </div>
+            <div class="button-group" style="margin-top: 1rem; grid-template-columns: repeat(1, 1fr);">
+                <button onclick="startKnapsack()" style="background: #7c3aed;">⚖️ 0/1 Knapsack DP</button>
+            </div>
             <div class="speed-control">
                 <label for="speed-slider">Animation Speed</label>
                 <input type="range" id="speed-slider" min="1" max="400" value="50">
@@ -45,6 +48,8 @@
         <div id="tree-container" class="tree-container" style="display: none;">
             <svg id="tree-svg" width="100%" height="500"></svg>
         </div>
+
+        <div id="knapsack-container" class="knapsack-container" style="display: none;"></div>
     </div>
 
     <script>
@@ -66,17 +71,222 @@
             }
         };
 
-        const nodeCoords = {};
         const verticalGAP = 80;
-        const initialHorizontalGAP = 200;
+        let treeBuilt = false;
+        let treeBaseGap = 220;
+        let treeCenterX = 450;
+        const treeNodes = {}; // global: id -> { x, y, val }
 
 
-        function getpos(parentX, parentY, depth, direction) {
-            const xoffset = initialHorizontalGAP / Math.pow(2, depth - 1);
+        function getpos(parentX, parentY, depth, direction, baseGap) {
+            const xoffset = baseGap / Math.pow(2, depth - 1);
             const x = (direction === 'L') ? parentX - xoffset : parentX + xoffset;
             const y = parentY + verticalGAP;
             return { x, y };
         }
+
+        function drawNode(svg, id, x, y, val, pid) {
+            if (pid !== '-1' && treeNodes[pid]) {
+                const p = treeNodes[pid];
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", p.x); line.setAttribute("y1", p.y);
+                line.setAttribute("x2", x);   line.setAttribute("y2", y);
+                line.classList.add("edge");
+                svg.appendChild(line);
+            }
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", x); circle.setAttribute("cy", y);
+            circle.setAttribute("r", 20); circle.setAttribute("id", `node-${id}`);
+            circle.classList.add("node");
+            svg.appendChild(circle);
+
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", x); text.setAttribute("y", y + 5);
+            text.setAttribute("text-anchor", "middle");
+            text.classList.add("node-text");
+            text.textContent = val;
+            svg.appendChild(text);
+        }
+
+        async function buildTree(svg, steps, animated) {
+            const nodeCount = steps.filter(s => s.startsWith('NODE')).length;
+            treeBaseGap = Math.max(220, nodeCount * 25);
+            treeCenterX = svg.getBoundingClientRect().width / 2 || 450;
+
+            for (const step of steps) {
+                const parts = step.split(' ');
+                const stepType = parts[0];
+
+                if (stepType === 'NODE') {
+                    const id = parts[1], val = parts[2], pid = parts[3], dir = parts[4];
+                    let x, y;
+                    if (pid === '-1') {
+                        x = treeCenterX; y = 50;
+                    } else {
+                        const parent = treeNodes[pid];
+                        const depth = Math.floor((parent.y - 50) / verticalGAP) + 1;
+                        const pos = getpos(parent.x, parent.y, depth, dir, treeBaseGap);
+                        x = pos.x; y = pos.y;
+                    }
+                    treeNodes[id] = { x, y, val };
+                    drawNode(svg, id, x, y, val, pid);
+                    if (animated) await sleep(animationSpeed);
+
+                } else if (stepType === 'CMP' && animated) {
+                    const nodeEl = document.getElementById(`node-${parts[1]}`);
+                    if (nodeEl) {
+                        nodeEl.classList.add('comparing');
+                        await sleep(animationSpeed);
+                        nodeEl.classList.remove('comparing');
+                    }
+                }
+            }
+            treeBuilt = true;
+        }
+
+        function setView(active) {
+            container.style.display = (active === 'bars') ? 'flex' : 'none';
+            document.getElementById('tree-container').style.display = (active === 'tree') ? 'block' : 'none';
+            document.getElementById('knapsack-container').style.display = (active === 'knapsack') ? 'block' : 'none';
+        }
+
+        async function startKnapsack() {
+            setView('knapsack');
+            statusElement.innerHTML = `<span class="complexity-info">Running 0/1 Knapsack DP...</span>`;
+
+            const response = await fetch('/knapsack');
+            const data = await response.json();
+
+            const kDiv = document.getElementById('knapsack-container');
+            kDiv.innerHTML = '<h3>0/1 Knapsack — DP Table (dp[item][capacity])</h3>';
+
+            let n = 0, W = 0;
+            const itemDefs = {};
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                if (parts[0] === 'CONFIG') { n = parseInt(parts[1]); W = parseInt(parts[2]); }
+                else if (parts[0] === 'DEF') { itemDefs[parseInt(parts[1])] = { w: parseInt(parts[2]), v: parseInt(parts[3]) }; }
+            }
+
+            // Build table
+            const table = document.createElement('table');
+            table.className = 'dp-table';
+
+            // Header row
+            const hdr = document.createElement('tr');
+            const corner = document.createElement('th');
+            corner.textContent = 'Item \ Cap';
+            corner.className = 'dp-corner';
+            hdr.appendChild(corner);
+            for (let j = 0; j <= W; j++) {
+                const th = document.createElement('th');
+                th.textContent = j;
+                th.className = 'dp-col-header';
+                hdr.appendChild(th);
+            }
+            table.appendChild(hdr);
+
+            // Data rows
+            for (let i = 0; i <= n; i++) {
+                const tr = document.createElement('tr');
+                const th = document.createElement('th');
+                th.id = `row-hdr-${i}`;
+                th.className = 'dp-row-header';
+                if (i === 0) {
+                    th.innerHTML = '<span>∅ (none)</span><small>baseline</small>';
+                } else {
+                    const it = itemDefs[i];
+                    th.innerHTML = `<span>Item ${i}</span><small>w=${it.w}, v=${it.v}</small>`;
+                }
+                tr.appendChild(th);
+                for (let j = 0; j <= W; j++) {
+                    const td = document.createElement('td');
+                    td.id = `cell-${i}-${j}`;
+                    td.className = 'dp-cell';
+                    td.textContent = '–';
+                    tr.appendChild(td);
+                }
+                table.appendChild(tr);
+            }
+            kDiv.appendChild(table);
+
+            // Animate steps
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                if (parts[0] === 'CELL') {
+                    const i = parseInt(parts[1]), j = parseInt(parts[2]), val = parseInt(parts[3]);
+                    const cell = document.getElementById(`cell-${i}-${j}`);
+                    if (cell) {
+                        cell.textContent = val;
+                        cell.classList.add('dp-filling');
+                        await sleep(animationSpeed);
+                        cell.classList.remove('dp-filling');
+                        cell.classList.add('dp-filled');
+                    }
+                } else if (parts[0] === 'PICK') {
+                    const i = parseInt(parts[1]);
+                    document.getElementById(`row-hdr-${i}`)?.classList.add('dp-picked');
+                    for (let j = 0; j <= W; j++)
+                        document.getElementById(`cell-${i}-${j}`)?.classList.add('dp-picked');
+                    await sleep(animationSpeed * 3);
+                } else if (parts[0] === 'MAX') {
+                    statusElement.innerHTML = `<span class="success-text">Max Value = ${parts[1]}</span><span class="complexity-info">0/1 Knapsack · O(nW) time &amp; space</span>`;
+                }
+            }
+        }
+
+        async function startTreeVisualizer(type = 'build') {
+            setView('tree');
+            statusElement.innerHTML = `<span class="complexity-info">Running ${type.toUpperCase()}...</span>`;
+
+            const svg = document.getElementById('tree-svg');
+
+            if (type === 'build') {
+                // Full clear and animated rebuild
+                svg.innerHTML = '';
+                Object.keys(treeNodes).forEach(k => delete treeNodes[k]);
+                treeBuilt = false;
+                await sleep(50); // let browser compute SVG width
+                const response = await fetch('/tree/build');
+                const data = await response.json();
+                await buildTree(svg, data.steps, true);
+
+            } else {
+                // Traversal: ensure tree is drawn first
+                if (!treeBuilt) {
+                    svg.innerHTML = '';
+                    Object.keys(treeNodes).forEach(k => delete treeNodes[k]);
+                    await sleep(50);
+                    // Build silently (instant) from build endpoint
+                    const buildRes = await fetch('/tree/build');
+                    const buildData = await buildRes.json();
+                    await buildTree(svg, buildData.steps, false);
+                }
+
+                // Clear previous traversal highlights
+                document.querySelectorAll('#tree-svg .node').forEach(n => {
+                    n.classList.remove('active', 'comparing');
+                });
+
+                // Fetch and animate traversal ACT steps only
+                const response = await fetch(`/tree/${type}`);
+                const data = await response.json();
+
+                for (const step of data.steps) {
+                    const parts = step.split(' ');
+                    if (parts[0] === 'ACT') {
+                        const nodeEl = document.getElementById(`node-${parts[1]}`);
+                        if (nodeEl) {
+                            nodeEl.classList.add('active');
+                            await sleep(animationSpeed);
+                        }
+                    }
+                }
+            }
+
+            statusElement.innerHTML = `<span class="success-text">${type.toUpperCase()} Complete!</span>`;
+        }
+
 
 
         const container = document.getElementById('bar-container');
@@ -116,8 +326,7 @@
 
 
         async function startSelectionSort() {
-            document.getElementById('tree-container').style.display = 'none';
-            container.style.display = 'flex';
+            setView('bars');
             const response = await fetch('/selectionsort');
             const data = await response.json();
             const bars = document.getElementsByClassName('bar');
@@ -154,8 +363,7 @@
         }
 
         async function startInsertionSort() {
-            document.getElementById('tree-container').style.display = 'none';
-            container.style.display = 'flex';
+            setView('bars');
             const response = await fetch('/insertionsort');
             const data = await response.json();
             const bars = document.getElementsByClassName('bar')
@@ -193,8 +401,7 @@
 
 
         async function startHeapSort() {
-            document.getElementById('tree-container').style.display = 'none';
-            container.style.display = 'flex';
+            setView('bars');
             const response = await fetch('/heapsort');
             const data = await response.json();
             const bars = document.getElementsByClassName('bar');
@@ -231,8 +438,7 @@
         }
 
         async function startMergeSort() {
-            document.getElementById('tree-container').style.display = 'none';
-            container.style.display = 'flex';
+            setView('bars');
             const response = await fetch('/mergesort');
             const data = await response.json();
             const bars = document.getElementsByClassName('bar');
@@ -271,8 +477,7 @@
 
 
         async function startbubbleSort() {
-            document.getElementById('tree-container').style.display = 'none';
-            container.style.display = 'flex';
+            setView('bars');
             const response = await fetch('/bubblesort');
             const data = await response.json();
             const bars = document.getElementsByClassName('bar')
@@ -309,8 +514,7 @@
         }
 
         async function startQuickSort() {
-            document.getElementById('tree-container').style.display = 'none';
-            container.style.display = 'flex';
+            setView('bars');
             const response = await fetch('/quicksort');
             const data = await response.json();
             const bars = document.getElementsByClassName('bar');
@@ -340,91 +544,6 @@
             onSortComplete('Quick Sort');
         }
 
-        async function startTreeVisualizer(type = 'build') {
-            container.style.display = 'none';
-            document.getElementById('tree-container').style.display = 'block';
-            statusElement.innerHTML = `<span class="complexity-info">Running ${type.toUpperCase()}...</span>`;
-            
-            const response = await fetch(`/tree/${type}`);
-            const data = await response.json();
-            const svg = document.getElementById('tree-svg');
-            svg.innerHTML = ''; // Clear previous
-            
-            const nodes = {}; // Store node positions
-            const centerX = svg.clientWidth / 2 || 450;
-            
-            for (const step of data.steps) {
-                const parts = step.split(' ');
-                const stepType = parts[0];
-                
-                if (stepType === 'NODE') {
-                    const id = parts[1];
-                    const val = parts[2];
-                    const pid = parts[3];
-                    const dir = parts[4];
-                    
-                    let x, y;
-                    if (pid === '-1') {
-                        x = centerX;
-                        y = 50;
-                    } else {
-                        const parent = nodes[pid];
-                        const depth = Math.floor((parent.y - 50) / verticalGAP) + 1;
-                        const pos = getpos(parent.x, parent.y, depth, dir);
-                        x = pos.x;
-                        y = pos.y;
-                        
-                        // Draw Edge
-                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                        line.setAttribute("x1", parent.x);
-                        line.setAttribute("y1", parent.y);
-                        line.setAttribute("x2", x);
-                        line.setAttribute("y2", y);
-                        line.classList.add("edge");
-                        svg.appendChild(line);
-                    }
-                    
-                    nodes[id] = { x, y, val };
-                    
-                    // Draw Node Circle
-                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                    circle.setAttribute("cx", x);
-                    circle.setAttribute("cy", y);
-                    circle.setAttribute("r", 20);
-                    circle.setAttribute("id", `node-${id}`);
-                    circle.classList.add("node");
-                    svg.appendChild(circle);
-                    
-                    // Draw Node Text
-                    const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-                    text.setAttribute("x", x);
-                    text.setAttribute("y", y + 5);
-                    text.setAttribute("text-anchor", "middle");
-                    text.classList.add("node-text");
-                    text.textContent = val;
-                    svg.appendChild(text);
-                    
-                    await sleep(animationSpeed);
-                    
-                } else if (stepType === 'CMP') {
-                    const id = parts[1];
-                    const nodeEl = document.getElementById(`node-${id}`);
-                    if (nodeEl) {
-                        nodeEl.classList.add('comparing');
-                        await sleep(animationSpeed);
-                        nodeEl.classList.remove('comparing');
-                    }
-                } else if (stepType === 'ACT') {
-                    const id = parts[1];
-                    const nodeEl = document.getElementById(`node-${id}`);
-                    if (nodeEl) {
-                        nodeEl.classList.add('active');
-                        await sleep(animationSpeed);
-                    }
-                }
-            }
-            statusElement.innerHTML = `<span class="success-text">${type.toUpperCase()} Operations Complete!</span>`;
-        }
 
         createBars();
     </script>

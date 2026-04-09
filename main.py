@@ -19,6 +19,16 @@ def get_tree_steps(traversal_type):
     return jsonify({"steps": steps})
 
 
+@app.route('/knapsack')
+def get_knapsack_steps():
+    process = subprocess.Popen(['./knapsack'], stdout=subprocess.PIPE, text=True)
+    steps = []
+    for line in process.stdout:
+        steps.append(line.strip())
+    return jsonify({"steps": steps})
+
+
+
 @app.route('/mergesort')
 def get_merge_steps():
     process=subprocess.Popen(['./merge'], stdout=subprocess.PIPE, text=True)

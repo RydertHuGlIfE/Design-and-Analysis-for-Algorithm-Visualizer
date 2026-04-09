@@ -195,3 +195,93 @@ button:hover {
         stroke-dashoffset: 0;
     }
 }
+
+/* Knapsack DP Table Styles */
+.knapsack-container {
+    margin-top: 3rem;
+    width: 100%;
+    max-width: 900px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    overflow-x: auto;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.knapsack-container h3 {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0 0 1rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.dp-table {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.82rem;
+}
+
+.dp-corner, .dp-col-header {
+    padding: 0.5rem 0.75rem;
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--text-muted);
+    font-weight: 700;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+.dp-row-header {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    white-space: nowrap;
+    min-width: 110px;
+}
+
+.dp-row-header span {
+    display: block;
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.dp-row-header small {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.68rem;
+    margin-top: 2px;
+}
+
+.dp-cell {
+    padding: 0.45rem 0.6rem;
+    text-align: center;
+    color: var(--text-muted);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    min-width: 42px;
+    transition: all 0.18s ease;
+    font-variant-numeric: tabular-nums;
+}
+
+.dp-filling {
+    background: rgba(99, 102, 241, 0.45) !important;
+    color: #fff !important;
+    border-color: #6366f1 !important;
+    transform: scale(1.08);
+    font-weight: 700;
+}
+
+.dp-filled {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.dp-picked {
+    background: rgba(16, 185, 129, 0.22) !important;
+    color: #10b981 !important;
+    border-color: rgba(16, 185, 129, 0.45) !important;
+    font-weight: 700;
+}
