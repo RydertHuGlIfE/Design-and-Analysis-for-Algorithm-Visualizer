@@ -28,6 +28,25 @@ def get_knapsack_steps():
     return jsonify({"steps": steps})
 
 
+@app.route('/mcm')
+def get_mcm_steps():
+    process = subprocess.Popen(['./mcm'], stdout=subprocess.PIPE, text=True)
+    steps = []
+    for line in process.stdout:
+        steps.append(line.strip())
+    return jsonify({"steps": steps})
+
+
+@app.route('/huffman')
+def get_huffman_steps():
+    process = subprocess.Popen(['./huffman'], stdout=subprocess.PIPE, text=True)
+    steps = []
+    for line in process.stdout:
+        steps.append(line.strip())
+    return jsonify({"steps": steps})
+
+
+
 
 @app.route('/mergesort')
 def get_merge_steps():

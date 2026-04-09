@@ -29,8 +29,10 @@
                 <button onclick="startTreeVisualizer('preorder')" style="background: #047857;">BST: Preorder</button>
                 <button onclick="startTreeVisualizer('postorder')" style="background: #065f46;">BST: Postorder</button>
             </div>
-            <div class="button-group" style="margin-top: 1rem; grid-template-columns: repeat(1, 1fr);">
-                <button onclick="startKnapsack()" style="background: #7c3aed;">⚖️ 0/1 Knapsack DP</button>
+            <div class="button-group" style="margin-top: 1rem; grid-template-columns: repeat(3, 1fr);">
+                <button onclick="startKnapsack()" style="background: #7c3aed;">⚖️ 0/1 Knapsack</button>
+                <button onclick="startMCM()" style="background: #9333ea;">🧩 Matrix Chain</button>
+                <button onclick="startHuffman()" style="background: #a855f7;">🌳 Huffman Coding</button>
             </div>
             <div class="speed-control">
                 <label for="speed-slider">Animation Speed</label>
@@ -50,6 +52,8 @@
         </div>
 
         <div id="knapsack-container" class="knapsack-container" style="display: none;"></div>
+        <div id="mcm-container" class="mcm-container" style="display: none;"></div>
+        <div id="huffman-container" class="huffman-container" style="display: none;"></div>
     </div>
 
     <script>
@@ -148,7 +152,197 @@
             container.style.display = (active === 'bars') ? 'flex' : 'none';
             document.getElementById('tree-container').style.display = (active === 'tree') ? 'block' : 'none';
             document.getElementById('knapsack-container').style.display = (active === 'knapsack') ? 'block' : 'none';
+            document.getElementById('mcm-container').style.display = (active === 'mcm') ? 'block' : 'none';
+            document.getElementById('huffman-container').style.display = (active === 'huffman') ? 'block' : 'none';
         }
+
+        async function startMCM() {
+            setView('mcm');
+            statusElement.innerHTML = `<span class="complexity-info">Running Matrix Chain Multiplication...</span>`;
+            
+            const response = await fetch('/mcm');
+            const data = await response.json();
+            const container = document.getElementById('mcm-container');
+            container.innerHTML = '<h3>Matrix Chain Multiplication — DP Table</h3>';
+            
+            let n = 0;
+            const dims = [];
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                if (parts[0] === 'CONFIG') n = parseInt(parts[1]);
+                if (parts[0] === 'DIM') dims.push({ i: parts[1], r: parts[2], c: parts[3] });
+            }
+
+            const dimsDiv = document.createElement('div');
+            dimsDiv.className = 'mcm-dims';
+            dims.forEach(d => {
+                const span = document.createElement('span');
+                span.className = 'mcm-dim-badge';
+                span.textContent = `M${d.i}: ${d.r}×${d.c}`;
+                dimsDiv.appendChild(span);
+            });
+            container.appendChild(dimsDiv);
+
+            const table = document.createElement('table');
+            table.className = 'dp-table';
+            
+            // Header
+            const hrow = document.createElement('tr');
+            hrow.innerHTML = `<th class="dp-corner">i\\j</th>`;
+            for (let j = 1; j <= n; j++) hrow.innerHTML += `<th class="dp-col-header">${j}</th>`;
+            table.appendChild(hrow);
+
+            for (let i = 1; i <= n; i++) {
+                const row = document.createElement('tr');
+                row.innerHTML = `<th class="dp-row-header"><span>Row ${i}</span></th>`;
+                for (let j = 1; j <= n; j++) {
+                    const td = document.createElement('td');
+                    td.id = `mcm-cell-${i}-${j}`;
+                    td.className = 'dp-cell';
+                    if (i > j) td.classList.add('dp-inactive');
+                    else if (i === j) {
+                        td.classList.add('dp-diagonal');
+                        td.textContent = '0';
+                    } else td.textContent = '∞';
+                    row.appendChild(td);
+                }
+                table.appendChild(row);
+            }
+            container.appendChild(table);
+
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                if (parts[0] === 'CELL') {
+                    const i = parts[1], j = parts[2], val = parts[3];
+                    const cell = document.getElementById(`mcm-cell-${i}-${j}`);
+                    cell.textContent = val;
+                    cell.classList.add('dp-filling');
+                    await sleep(animationSpeed);
+                    cell.classList.remove('dp-filling');
+                    cell.classList.add('dp-filled');
+                    if (i == 1 && j == n) cell.classList.add('dp-optimal-cell');
+                } else if (parts[0] === 'OPTIMAL') {
+                    const optDiv = document.createElement('div');
+                    optDiv.className = 'mcm-optimal';
+                    optDiv.innerHTML = `<strong>Min Cost: ${parts[1]}</strong><br>Optimal Parantheses: ${parts[2]}`;
+                    container.appendChild(optDiv);
+                    statusElement.innerHTML = `<span class="success-text">MCM Complete! Optimal Cost: ${parts[1]}</span>`;
+                }
+            }
+        }
+
+        async function startHuffman() {
+            setView('huffman');
+            statusElement.innerHTML = `<span class="complexity-info">Running Huffman Coding...</span>`;
+
+            const response = await fetch('/huffman');
+            const data = await response.json();
+            const container = document.getElementById('huffman-container');
+            container.innerHTML = '<h3>Huffman Coding — Tree & Codes</h3>';
+
+            const logDiv = document.createElement('div');
+            logDiv.className = 'huff-log';
+            container.appendChild(logDiv);
+
+            const qDiv = document.createElement('div');
+            qDiv.className = 'huff-queue';
+            container.appendChild(qDiv);
+
+            const svgDiv = document.createElement('div');
+            svgDiv.className = 'tree-container';
+            svgDiv.innerHTML = '<svg id="huff-svg" width="100%" height="400"></svg>';
+            container.appendChild(svgDiv);
+
+            const codesDiv = document.createElement('div');
+            codesDiv.className = 'huff-code-section';
+            codesDiv.innerHTML = '<h4>Character Codes</h4><table class="dp-table" id="huff-code-table"><tr><th class="dp-col-header">Char</th><th class="dp-col-header">Code</th></tr></table>';
+            container.appendChild(codesDiv);
+
+            const svg = document.getElementById('huff-svg');
+            const nodes = {};
+            const centerX = svg.clientWidth / 2 || 450;
+            let stepNum = 1;
+
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                if (parts[0] === 'LEAF') {
+                    const id = parts[1], ch = parts[2], fr = parts[3];
+                    const card = document.createElement('div');
+                    card.id = `huff-card-${id}`;
+                    card.className = 'huff-card';
+                    card.innerHTML = `<b>${ch}</b><small>${fr}</small>`;
+                    qDiv.appendChild(card);
+                } else if (parts[0] === 'MERGE') {
+                    const l = parts[1], r = parts[2], id = parts[3], fr = parts[4];
+                    const cl = document.getElementById(`huff-card-${l}`);
+                    const cr = document.getElementById(`huff-card-${r}`);
+                    
+                    cl.classList.add('huff-extracting');
+                    await sleep(animationSpeed);
+                    cr.classList.add('huff-extracting');
+                    await sleep(animationSpeed);
+
+                    const entry = document.createElement('div');
+                    entry.className = 'huff-log-entry';
+                    entry.innerHTML = `<span class="huff-step-num">#${stepNum++}</span> Merged nodes ${l} and ${r} → New freq ${fr}`;
+                    logDiv.appendChild(entry);
+                    logDiv.scrollTop = logDiv.scrollHeight;
+
+                    cl.classList.remove('huff-extracting');
+                    cr.classList.remove('huff-extracting');
+                    cl.classList.add('huff-extracted');
+                    cr.classList.add('huff-extracted');
+
+                    const card = document.createElement('div');
+                    card.id = `huff-card-${id}`;
+                    card.className = 'huff-card huff-internal';
+                    card.innerHTML = `<b>*</b><small>${fr}</small>`;
+                    qDiv.appendChild(card);
+                    await sleep(animationSpeed);
+
+                } else if (parts[0] === 'TNODE') {
+                    const id = parts[1], pid = parts[2], dir = parts[3], fr = parts[4], lbl = parts[5];
+                    let x, y;
+                    if (pid === '-1') { x = centerX; y = 40; }
+                    else {
+                        const p = nodes[pid];
+                        const depth = Math.floor((p.y - 40) / 70) + 1;
+                        const xoffset = 180 / Math.pow(2, depth - 1);
+                        x = (dir === 'L') ? p.x - xoffset : p.x + xoffset;
+                        y = p.y + 70;
+
+                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        line.setAttribute("x1", p.x); line.setAttribute("y1", p.y);
+                        line.setAttribute("x2", x);   line.setAttribute("y2", y);
+                        line.classList.add("edge");
+                        svg.appendChild(line);
+                    }
+                    nodes[id] = { x, y };
+                    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circle.setAttribute("cx", x); circle.setAttribute("cy", y);
+                    circle.setAttribute("r", 18);
+                    circle.id = `huff-node-${id}`;
+                    circle.setAttribute("class", (lbl==='*') ? "node" : "node huff-leaf-circle");
+                    svg.appendChild(circle);
+
+                    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    txt.setAttribute("x", x); txt.setAttribute("y", y + 4);
+                    txt.setAttribute("text-anchor", "middle");
+                    txt.setAttribute("class", "node-text");
+                    txt.textContent = (lbl==='*') ? fr : lbl;
+                    svg.appendChild(txt);
+                    await sleep(animationSpeed / 2);
+
+                } else if (parts[0] === 'CODE') {
+                    const table = document.getElementById('huff-code-table');
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td class="dp-cell dp-filled">${parts[1]}</td><td class="dp-cell dp-filled">${parts[2]}</td>`;
+                    table.appendChild(row);
+                }
+            }
+            statusElement.innerHTML = `<span class="success-text">Huffman Coding Complete!</span>`;
+        }
+
 
         async function startKnapsack() {
             setView('knapsack');
