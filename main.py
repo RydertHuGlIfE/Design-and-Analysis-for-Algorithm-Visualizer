@@ -9,7 +9,6 @@ def mainpage():
     return render_template('index.html')
 
 
-
 @app.route('/tree/<traversal_type>')
 def get_tree_steps(traversal_type):
     process = subprocess.Popen(['./tree', traversal_type], stdout=subprocess.PIPE, text=True)

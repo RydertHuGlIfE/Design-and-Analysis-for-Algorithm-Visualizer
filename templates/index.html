@@ -63,9 +63,21 @@
                 <div id="tree-container" class="tree-container" style="display: none; width: 100%; height: 100%;">
                     <svg id="tree-svg" width="100%" height="100%"></svg>
                 </div>
-                <div id="knapsack-container" class="knapsack-container" style="display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center;"></div>
-                <div id="mcm-container" class="mcm-container" style="display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center;"></div>
-                <div id="huffman-container" class="huffman-container" style="display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center;"></div>
+                <div id="knapsack-container" class="knapsack-container" style="display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+                    <div id="kp-data" class="ref-data-panel" style="width: 100%; max-height: 150px; overflow-y: auto;"></div>
+                    <div id="kp-viz-wrapper" style="width: 100%; display: flex; justify-content: center;"></div>
+                </div>
+                <div id="mcm-container" class="mcm-container" style="display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+                    <div id="mcm-dims" class="ref-data-panel" style="width: 100%; max-height: 150px; overflow-y: auto;"></div>
+                    <div id="mcm-viz-wrapper" style="width: 100%; display: flex; justify-content: center;"></div>
+                </div>
+                <div id="huffman-container" class="huffman-container" style="display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
+                    <div id="hf-data" class="ref-data-panel" style="width: 100%; max-height: 100px; overflow-y: auto;"></div>
+                    <div id="hf-tree-wrapper" style="width: 100%; height: 400px; position: relative;">
+                        <svg id="hf-svg" width="100%" height="100%"></svg>
+                    </div>
+                    <div id="hf-codes" style="width: 100%; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px;"></div>
+                </div>
             </div>
         </main>
 
@@ -176,6 +188,10 @@
                 const el = document.getElementById(c);
                 if (c.includes(active)) {
                     el.style.display = (active === 'bar') ? 'flex' : (active === 'tree' ? 'block' : 'flex');
+                } else if (c === 'mcm-container' && active === 'mcm') {
+                     el.style.display = 'flex';
+                } else if (c === 'huffman-container' && active === 'huffman') {
+                     el.style.display = 'flex';
                 } else {
                     el.style.display = 'none';
                 }
@@ -309,14 +325,18 @@
             }
         }
 
-        // DP
         async function startKnapsack() {
             setView('knapsack'); updateMetadata('Knapsack');
             const res = await fetch('/knapsack');
             const data = await res.json();
-            const container = document.getElementById('knapsack-container');
-            container.innerHTML = '<table class="dp-table" id="kp-table"></table>';
+            
+            const dataPanel = document.getElementById('kp-data');
+            const vizWrapper = document.getElementById('kp-viz-wrapper');
+            dataPanel.innerHTML = '<h5>ORIGINAL DATA</h5><table class="data-table" id="kp-data-table"><tr><th>Item</th><th>Weight</th><th>Value</th></tr></table>';
+            vizWrapper.innerHTML = '<table class="dp-table" id="kp-table"></table>';
+            
             const table = document.getElementById('kp-table');
+            const dTable = document.getElementById('kp-data-table');
             
             let n, W;
             for (const step of data.steps) {
@@ -332,24 +352,159 @@
                         }
                         table.appendChild(tr);
                     }
+                } else if (parts[0] === 'DEF') {
+                    const i = parts[1], wt = parts[2], val = parts[3];
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>#${i}</td><td>${wt}</td><td>${val}</td>`;
+                    dTable.appendChild(tr);
+                    stepDesc.innerText = `Adding item ${i}: weight ${wt}, value ${val}.`;
+                    await sleep(animationSpeed);
                 } else if (parts[0] === 'CELL') {
                     const i = parts[1], j = parts[2], val = parts[3];
                     const cell = document.getElementById(`kp-${i}-${j}`);
-                    cell.textContent = val; cell.classList.add('dp-filling');
-                    await sleep(animationSpeed);
-                    cell.classList.remove('dp-filling'); cell.classList.add('dp-filled');
+                    if(cell) {
+                        cell.textContent = val; cell.classList.add('dp-filling');
+                        stepDesc.innerText = `Calculating DP[${i}][${j}] = ${val}`;
+                        await sleep(animationSpeed);
+                        cell.classList.remove('dp-filling'); cell.classList.add('dp-filled');
+                    }
                 }
             }
         }
 
         async function startMCM() {
-            setView('mcm-container'); updateMetadata('Matrix Chain');
-            // Similar logic for MCM
+            setView('mcm'); updateMetadata('Matrix Chain');
+            const res = await fetch('/mcm');
+            const data = await res.json();
+            
+            const dimsPanel = document.getElementById('mcm-dims');
+            const vizWrapper = document.getElementById('mcm-viz-wrapper');
+            dimsPanel.innerHTML = '<h5>MATRIX DIMENSIONS</h5><div id="mcm-dim-list" style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;"></div>';
+            vizWrapper.innerHTML = '<table class="dp-table" id="mcm-table"></table>';
+            
+            const table = document.getElementById('mcm-table');
+            const dimList = document.getElementById('mcm-dim-list');
+            
+            let n;
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                if (parts[0] === 'CONFIG') {
+                    n = parseInt(parts[1]);
+                    for (let i = 1; i <= n; i++) {
+                        const tr = document.createElement('tr');
+                        for (let j = 1; j <= n; j++) {
+                            const td = document.createElement('td');
+                            td.id = `mcm-${i}-${j}`; td.className = 'dp-cell'; td.textContent = (i === j) ? '0' : '—';
+                            tr.appendChild(td);
+                        }
+                        table.appendChild(tr);
+                    }
+                } else if (parts[0] === 'DIM') {
+                    const i = parts[1], r = parts[2], c = parts[3];
+                    const div = document.createElement('div');
+                    div.className = 'data-card';
+                    div.style.padding = '5px 10px';
+                    div.innerHTML = `M${i}: ${r}×${c}`;
+                    dimList.appendChild(div);
+                    stepDesc.innerText = `Matrix ${i} dimensions: ${r}x${c}`;
+                    await sleep(animationSpeed);
+                } else if (parts[0] === 'CELL') {
+                    const i = parts[1], j = parts[2], val = parts[3];
+                    const cell = document.getElementById(`mcm-${i}-${j}`);
+                    if(cell) {
+                        cell.textContent = val; cell.classList.add('dp-filling');
+                        stepDesc.innerText = `Calculating MCM[${i}][${j}] = ${val}`;
+                        await sleep(animationSpeed);
+                        cell.classList.remove('dp-filling'); cell.classList.add('dp-filled');
+                    }
+                } else if (parts[0] === 'OPTIMAL') {
+                    const val = parts[1], p = parts.slice(2).join(' ');
+                    stepDesc.innerText = `Optimal Cost: ${val}. Sequence: ${p}`;
+                    statusElement.innerText = "SUCCESS";
+                }
+            }
         }
 
         async function startHuffman() {
             setView('huffman'); updateMetadata('Huffman');
-            // Similar logic for Huffman
+            const res = await fetch('/huffman');
+            const data = await res.json();
+            
+            const dataPanel = document.getElementById('hf-data');
+            const svg = document.getElementById('hf-svg');
+            const codesPanel = document.getElementById('hf-codes');
+            
+            dataPanel.innerHTML = '<h5>CHARACTER FREQUENCIES</h5><div id="hf-freq-list" style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;"></div>';
+            svg.innerHTML = '';
+            codesPanel.innerHTML = '';
+            
+            const freqList = document.getElementById('hf-freq-list');
+            const hfNodes = {};
+            const centerX = svg.clientWidth / 2 || 400;
+
+            for (const step of data.steps) {
+                const parts = step.split(' ');
+                if (parts[0] === 'CONFIG') {
+                    // skip
+                } else if (parts[0] === 'LEAF') {
+                    const id = parts[1], ch = parts[2], fr = parts[3];
+                    const div = document.createElement('div');
+                    div.className = 'data-card';
+                    div.style.padding = '5px 10px';
+                    div.innerHTML = `'${ch}': ${fr}`;
+                    freqList.appendChild(div);
+                    stepDesc.innerText = `Adding leaf node for '${ch}' with frequency ${fr}`;
+                    await sleep(animationSpeed);
+                } else if (parts[0] === 'MERGE') {
+                    const l = parts[1], r = parts[2], id = parts[3], freq = parts[4];
+                    stepDesc.innerText = `Merging nodes ${l} and ${r} into new node ${id} (freq: ${freq})`;
+                    await sleep(animationSpeed);
+                } else if (parts[0] === 'TNODE') {
+                    const id = parts[1], pid = parts[2], dir = parts[3], freq = parts[4], lbl = parts.slice(5).join(' ');
+                    let x, y;
+                    if (pid === '-1') { x = centerX; y = 40; }
+                    else {
+                        const p = hfNodes[pid];
+                        const depth = Math.floor((p.y - 40) / 70) + 1;
+                        const xoffset = 200 / Math.pow(2, depth - 1);
+                        x = (dir === 'L') ? p.x - xoffset : p.x + xoffset;
+                        y = p.y + 70;
+                        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                        line.setAttribute("x1", p.x); line.setAttribute("y1", p.y);
+                        line.setAttribute("x2", x); line.setAttribute("y2", y);
+                        line.classList.add("edge");
+                        svg.appendChild(line);
+                        
+                        const bit = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                        bit.setAttribute("x", (p.x + x) / 2); bit.setAttribute("y", (p.y + y) / 2 - 5);
+                        bit.setAttribute("text-anchor", "middle"); bit.style.fontSize = "10px";
+                        bit.style.fill = "var(--primary)"; bit.textContent = (dir === 'L' ? '0' : '1');
+                        svg.appendChild(bit);
+                    }
+                    hfNodes[id] = { x, y };
+                    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                    const circ = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    circ.setAttribute("cx", x); circ.setAttribute("cy", y); circ.classList.add("node");
+                    circ.setAttribute("r", "18");
+                    g.appendChild(circ);
+                    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                    txt.setAttribute("x", x); txt.setAttribute("y", y + 4); txt.classList.add("node-text");
+                    txt.setAttribute("text-anchor", "middle"); txt.style.fontSize = "10px";
+                    txt.textContent = lbl === '*' ? freq : `${lbl}:${freq}`;
+                    g.appendChild(txt);
+                    svg.appendChild(g);
+                    await sleep(animationSpeed / 2);
+                } else if (parts[0] === 'CODE') {
+                    const ch = parts[1], code = parts[2];
+                    const div = document.createElement('div');
+                    div.className = 'data-card';
+                    div.style.border = '1px solid var(--primary)';
+                    div.innerHTML = `<b>${ch}:</b> ${code}`;
+                    codesPanel.appendChild(div);
+                } else if (parts[0] === 'DONE') {
+                    statusElement.innerText = "SUCCESS";
+                }
+            }
         }
     </script>
 </body>
