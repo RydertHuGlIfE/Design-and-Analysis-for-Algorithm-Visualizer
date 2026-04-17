@@ -43,8 +43,15 @@ void mergeSort(std::vector<int>& arr, int left, int right) {
     merge(arr, left, mid, right);
 }
 
-int main() {
-    std::vector<int> arr = {120, 350, 50, 560, 200, 410, 80, 5, 290, 480, 150, 310, 220, 600, 100, 450, 30, 520, 180, 390};
+int main(int argc, char* argv[]) {
+    std::vector<int> arr;
+    if (argc > 1) {
+        int n = atoi(argv[1]);
+        srand(42);
+        for (int i = 0; i < n; i++) arr.push_back(rand() % 600 + 1);
+    } else {
+        arr = {120, 350, 50, 560, 200, 410, 80, 5, 290, 480, 150, 310, 220, 600, 100, 450, 30, 520, 180, 390};
+    }
     mergeSort(arr, 0, static_cast<int>(arr.size()) - 1);
     return 0;
 }

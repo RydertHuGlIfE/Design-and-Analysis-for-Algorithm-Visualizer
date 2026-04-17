@@ -1,7 +1,30 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 import subprocess
 
 app = Flask(__name__)
+
+SORT_BINARIES = {
+    'bubble': './bubble',
+    'merge': './merge',
+    'quick': './quick',
+    'heap': './heap',
+    'insertion': './insertion',
+    'selection': './selection',
+}
+
+
+@app.route('/sort/<algo>')
+def get_sort_steps(algo):
+    binary = SORT_BINARIES.get(algo)
+    if not binary:
+        return jsonify({"error": "Unknown algorithm"}), 404
+    n = request.args.get('n')
+    cmd = [binary] + ([n] if n else [])
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, text=True)
+    steps = []
+    for line in process.stdout:
+        steps.append(line.strip())
+    return jsonify({"steps": steps})
 
 
 @app.route('/')
