@@ -47,6 +47,33 @@
                         <button class="nav-btn" data-algo="Huffman" onclick="startHuffman()">🌳 Huffman Coding</button>
                     </div>
                 </nav>
+
+                <nav class="nav-section" style="margin-top: 2rem;">
+                    <h3><span>🧠</span> Learn Mode</h3>
+                    <div class="nav-buttons">
+                        <button class="nav-btn learn-btn" onclick="startLearnMode('/bubblesort','Bubble Sort')">🎓 Bubble Sort</button>
+                        <button class="nav-btn learn-btn" onclick="startLearnMode('/insertionsort','Insertion Sort')">🎓 Insertion Sort</button>
+                        <button class="nav-btn learn-btn" onclick="startLearnMode('/selectionsort','Selection Sort')">🎓 Selection Sort</button>
+                    </div>
+                </nav>
+
+                <nav class="nav-section" style="margin-top: 2rem;">
+                    <h3><span>🏁</span> Algorithm Race</h3>
+                    <div class="nav-buttons">
+                        <select id="race-algo1" class="race-select"><option value="/bubblesort">Bubble</option><option value="/insertionsort">Insertion</option><option value="/selectionsort">Selection</option><option value="/mergesort">Merge</option><option value="/quicksort">Quick</option><option value="/heapsort">Heap</option></select>
+                        <span style="color:var(--text-muted);text-align:center;font-size:0.7rem;">VS</span>
+                        <select id="race-algo2" class="race-select"><option value="/mergesort">Merge</option><option value="/quicksort">Quick</option><option value="/heapsort">Heap</option><option value="/bubblesort">Bubble</option><option value="/insertionsort">Insertion</option><option value="/selectionsort">Selection</option></select>
+                        <button class="nav-btn learn-btn" onclick="startRace()">🏁 Race!</button>
+                    </div>
+                </nav>
+
+                <nav class="nav-section" style="margin-top: 2rem;">
+                    <h3><span>📊</span> Complexity Graph</h3>
+                    <div class="nav-buttons">
+                        <select id="graph-algo" class="race-select"><option value="bubble">Bubble Sort</option><option value="insertion">Insertion Sort</option><option value="selection">Selection Sort</option><option value="merge">Merge Sort</option><option value="quick">Quick Sort</option><option value="heap">Heap Sort</option></select>
+                        <button class="nav-btn learn-btn" onclick="showComplexityGraph()">📊 Plot!</button>
+                    </div>
+                </nav>
             </div>
         </aside>
 
@@ -77,6 +104,29 @@
                         <svg id="hf-svg" width="100%" height="100%"></svg>
                     </div>
                     <div id="hf-codes" style="width: 100%; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px;"></div>
+                </div>
+                <!-- Learn Mode overlay -->
+                <div id="learn-container" style="display:none; width:100%; height:100%; flex-direction:column; align-items:center; justify-content:flex-start; gap:10px;">
+                    <div id="learn-score" class="learn-score-bar"></div>
+                    <div id="learn-bars" class="bar-container" style="display:flex; flex:1; width:100%;"></div>
+                    <div id="learn-prompt" class="learn-prompt"></div>
+                </div>
+                <!-- Race containers -->
+                <div id="race-container" style="display:none; width:100%; height:100%; flex-direction:column; gap:10px;">
+                    <div style="display:flex; gap:20px; width:100%; justify-content:center;">
+                        <div class="race-counter" id="race-stats1"></div>
+                        <div class="race-counter" id="race-stats2"></div>
+                    </div>
+                    <div style="display:flex; gap:10px; flex:1; width:100%;">
+                        <div id="race-bars1" class="bar-container" style="display:flex; flex:1;"></div>
+                        <div style="width:2px; background:var(--outline);"></div>
+                        <div id="race-bars2" class="bar-container" style="display:flex; flex:1;"></div>
+                    </div>
+                    <div id="race-summary" class="race-summary" style="display:none;"></div>
+                </div>
+                <!-- Graph container -->
+                <div id="graph-container" style="display:none; width:100%; height:100%; flex-direction:column; align-items:center; justify-content:center;">
+                    <svg id="graph-svg" width="100%" height="100%"></svg>
                 </div>
             </div>
         </main>
@@ -183,23 +233,15 @@
         }
 
         function setView(active) {
-            const containers = ['bar-container', 'tree-container', 'knapsack-container', 'mcm-container', 'huffman-container'];
+            const containers = ['bar-container', 'tree-container', 'knapsack-container', 'mcm-container', 'huffman-container', 'learn-container', 'race-container', 'graph-container'];
             containers.forEach(c => {
                 const el = document.getElementById(c);
-                if (c.includes(active)) {
+                if (!el) return;
+                if (c.startsWith(active + '-') || c === active + '-container') {
                     el.style.display = (active === 'bar') ? 'flex' : (active === 'tree' ? 'block' : 'flex');
-                } else if (c === 'mcm-container' && active === 'mcm') {
-                     el.style.display = 'flex';
-                } else if (c === 'huffman-container' && active === 'huffman') {
-                     el.style.display = 'flex';
                 } else {
                     el.style.display = 'none';
                 }
-            });
-            
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.textContent.toLowerCase().includes(active.toLowerCase()) || 
-                                (active === 'bar' && btn.parentElement.parentElement.innerHTML.includes('Sorting')));
             });
         }
 
@@ -505,6 +547,284 @@
                     statusElement.innerText = "SUCCESS";
                 }
             }
+        }
+
+        // ========== LEARN MODE ==========
+        async function startLearnMode(endpoint, algoName) {
+            setView('learn');
+            updateMetadata('🧠 ' + algoName);
+            statusElement.innerText = "LEARN MODE";
+            const learnBars = document.getElementById('learn-bars');
+            const learnPrompt = document.getElementById('learn-prompt');
+            const learnScore = document.getElementById('learn-score');
+            learnBars.innerHTML = '';
+            learnPrompt.innerHTML = '';
+
+            let arr = [120, 350, 50, 560, 200, 410, 80, 5, 290, 480, 150, 310, 220, 600, 100, 450, 30, 520, 180, 390];
+            const maxVal = Math.max(...arr);
+            arr.forEach((v, idx) => {
+                const b = document.createElement('div');
+                b.className = 'bar';
+                b.style.height = `${(v / maxVal) * 100}%`;
+                const lbl = document.createElement('span');
+                lbl.className = 'bar-label';
+                lbl.textContent = v;
+                b.appendChild(lbl);
+                learnBars.appendChild(b);
+            });
+            const bars = learnBars.getElementsByClassName('bar');
+
+            const response = await fetch(endpoint);
+            const data = await response.json();
+            let score = 0, total = 0;
+            learnScore.innerHTML = `<span>Score: <b id="lscore">0</b> / <b id="ltotal">0</b></span><div class="score-bar-track"><div class="score-bar-fill" id="score-fill"></div></div>`;
+
+            for (let si = 0; si < data.steps.length; si++) {
+                const step = data.steps[si];
+                const parts = step.split(' ');
+                if (parts[0] === 'CMP') {
+                    const i = parseInt(parts[1]), j = parseInt(parts[2]);
+                    bars[i]?.classList.add('comparing');
+                    bars[j]?.classList.add('comparing');
+
+                    const willSwap = (si + 1 < data.steps.length && data.steps[si + 1].startsWith('UPD'));
+                    learnPrompt.innerHTML = `<div class="learn-q">Comparing index <b>${i}</b> (${arr[i]}) and <b>${j}</b> (${arr[j]}). Will they swap?</div><div class="learn-btns"><button class="lbtn lbtn-yes" id="lbtn-y">✅ Yes</button><button class="lbtn lbtn-no" id="lbtn-n">❌ No</button></div>`;
+
+                    const answer = await new Promise(resolve => {
+                        document.getElementById('lbtn-y').onclick = () => resolve(true);
+                        document.getElementById('lbtn-n').onclick = () => resolve(false);
+                    });
+
+                    total++;
+                    if (answer === willSwap) {
+                        score++;
+                        learnPrompt.classList.add('flash-correct');
+                    } else {
+                        learnPrompt.classList.add('flash-wrong');
+                    }
+                    document.getElementById('lscore').textContent = score;
+                    document.getElementById('ltotal').textContent = total;
+                    const pct = total > 0 ? (score / total) * 100 : 0;
+                    document.getElementById('score-fill').style.width = pct + '%';
+
+                    stepDesc.innerText = answer === willSwap ? '✅ Correct!' : `❌ Wrong! The answer was ${willSwap ? 'Yes' : 'No'}`;
+                    await sleep(600);
+                    learnPrompt.classList.remove('flash-correct', 'flash-wrong');
+                    bars[i]?.classList.remove('comparing');
+                    bars[j]?.classList.remove('comparing');
+                } else if (parts[0] === 'UPD') {
+                    const i = parseInt(parts[1]), val = parseInt(parts[2]);
+                    arr[i] = val;
+                    if (bars[i]) {
+                        bars[i].style.height = `${(val / maxVal) * 100}%`;
+                        bars[i].querySelector('.bar-label').textContent = val;
+                        bars[i].classList.add('active-step');
+                    }
+                    await sleep(animationSpeed / 2);
+                    if (bars[i]) bars[i].classList.remove('active-step');
+                }
+            }
+            for (let b of bars) b.classList.add('sorted');
+            const pct = total > 0 ? Math.round((score / total) * 100) : 0;
+            learnPrompt.innerHTML = `<div class="learn-final">🎉 Final Score: <b>${score}/${total}</b> (${pct}%)</div>`;
+            statusElement.innerText = "COMPLETE";
+        }
+
+        // ========== ALGORITHM RACE ==========
+        async function startRace() {
+            const e1 = document.getElementById('race-algo1');
+            const e2 = document.getElementById('race-algo2');
+            const ep1 = e1.value, ep2 = e2.value;
+            const name1 = e1.options[e1.selectedIndex].text;
+            const name2 = e2.options[e2.selectedIndex].text;
+
+            setView('race');
+            updateMetadata(`${name1} vs ${name2}`);
+            statusElement.innerText = "RACING";
+
+            const raceBars1 = document.getElementById('race-bars1');
+            const raceBars2 = document.getElementById('race-bars2');
+            const stats1 = document.getElementById('race-stats1');
+            const stats2 = document.getElementById('race-stats2');
+            const summary = document.getElementById('race-summary');
+            raceBars1.innerHTML = ''; raceBars2.innerHTML = '';
+            summary.style.display = 'none';
+
+            let arr = [120, 350, 50, 560, 200, 410, 80, 5, 290, 480, 150, 310, 220, 600, 100, 450, 30, 520, 180, 390];
+            const maxVal = Math.max(...arr);
+
+            function createBars(container) {
+                arr.forEach(v => {
+                    const b = document.createElement('div');
+                    b.className = 'bar';
+                    b.style.height = `${(v / maxVal) * 100}%`;
+                    container.appendChild(b);
+                });
+                return container.getElementsByClassName('bar');
+            }
+            const bars1 = createBars(raceBars1);
+            const bars2 = createBars(raceBars2);
+
+            stats1.innerHTML = `<b>${name1}</b><br>CMP: <span id="rc1">0</span> | SWP: <span id="rs1">0</span>`;
+            stats2.innerHTML = `<b>${name2}</b><br>CMP: <span id="rc2">0</span> | SWP: <span id="rs2">0</span>`;
+
+            const [r1, r2] = await Promise.all([fetch(ep1), fetch(ep2)]);
+            const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
+
+            async function animateRace(steps, bars, cmpId, swpId) {
+                let cmp = 0, swp = 0;
+                for (const step of steps) {
+                    const p = step.split(' ');
+                    if (p[0] === 'CMP') {
+                        cmp++;
+                        document.getElementById(cmpId).textContent = cmp;
+                        const i = parseInt(p[1]), j = parseInt(p[2]);
+                        bars[i]?.classList.add('comparing');
+                        bars[j]?.classList.add('comparing');
+                        await sleep(animationSpeed / 2);
+                        bars[i]?.classList.remove('comparing');
+                        bars[j]?.classList.remove('comparing');
+                    } else if (p[0] === 'UPD') {
+                        swp++;
+                        document.getElementById(swpId).textContent = swp;
+                        const i = parseInt(p[1]), val = parseInt(p[2]);
+                        if (bars[i]) bars[i].style.height = `${(val / maxVal) * 100}%`;
+                    }
+                }
+                for (let b of bars) b.classList.add('sorted');
+                return { cmp, swp };
+            }
+
+            const [res1, res2] = await Promise.all([
+                animateRace(d1.steps, bars1, 'rc1', 'rs1'),
+                animateRace(d2.steps, bars2, 'rc2', 'rs2')
+            ]);
+
+            const winner = res1.cmp < res2.cmp ? name1 : (res2.cmp < res1.cmp ? name2 : 'Tie');
+            summary.style.display = 'block';
+            summary.innerHTML = `<div class="race-winner">🏆 ${winner === 'Tie' ? "It's a Tie!" : winner + ' Wins!'}</div><div class="race-detail">${name1}: ${res1.cmp} comparisons, ${res1.swp} updates<br>${name2}: ${res2.cmp} comparisons, ${res2.swp} updates</div>`;
+            statusElement.innerText = "COMPLETE";
+        }
+
+        // ========== COMPLEXITY GRAPHER ==========
+        async function showComplexityGraph() {
+            const algoSelect = document.getElementById('graph-algo');
+            const algo = algoSelect.value;
+            const algoName = algoSelect.options[algoSelect.selectedIndex].text;
+            setView('graph');
+            updateMetadata('📊 ' + algoName);
+            statusElement.innerText = "PLOTTING";
+            stepDesc.innerText = "Running algorithm on different input sizes...";
+
+            const sizes = [5, 10, 15, 20, 30, 40, 50, 60, 80, 100];
+            const dataPoints = [];
+
+            for (const n of sizes) {
+                const res = await fetch(`/sort/${algo}?n=${n}`);
+                const data = await res.json();
+                const ops = data.steps.length;
+                dataPoints.push({ n, ops });
+                stepDesc.innerText = `n=${n}: ${ops} operations`;
+            }
+
+            const svg = document.getElementById('graph-svg');
+            svg.innerHTML = '';
+            const W = svg.clientWidth || 700, H = svg.clientHeight || 400;
+            const pad = { t: 40, r: 40, b: 60, l: 70 };
+            const gW = W - pad.l - pad.r, gH = H - pad.t - pad.b;
+            const maxN = Math.max(...dataPoints.map(d => d.n));
+            const maxOps = Math.max(...dataPoints.map(d => d.ops));
+
+            const theoreticalFn = ['bubble','insertion','selection'].includes(algo)
+                ? (n => n * n) : (n => n * Math.log2(n));
+            const theoLabel = ['bubble','insertion','selection'].includes(algo) ? 'O(n²)' : 'O(n log n)';
+            const theoPoints = sizes.map(n => ({ n, ops: theoreticalFn(n) }));
+            const maxTheo = Math.max(...theoPoints.map(d => d.ops));
+            const scaleMax = Math.max(maxOps, maxTheo) * 1.1;
+
+            const sx = n => pad.l + (n / maxN) * gW;
+            const sy = ops => pad.t + gH - (ops / scaleMax) * gH;
+
+            // Grid lines
+            for (let i = 0; i <= 5; i++) {
+                const yy = pad.t + (gH / 5) * i;
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", pad.l); line.setAttribute("x2", W - pad.r);
+                line.setAttribute("y1", yy); line.setAttribute("y2", yy);
+                line.setAttribute("stroke", "rgba(255,255,255,0.06)"); line.setAttribute("stroke-width", "1");
+                svg.appendChild(line);
+                const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                txt.setAttribute("x", pad.l - 10); txt.setAttribute("y", yy + 4);
+                txt.setAttribute("text-anchor", "end"); txt.style.fill = "#94a3b8"; txt.style.fontSize = "11px";
+                txt.textContent = Math.round(scaleMax - (scaleMax / 5) * i);
+                svg.appendChild(txt);
+            }
+
+            // X ticks
+            sizes.forEach(n => {
+                const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                txt.setAttribute("x", sx(n)); txt.setAttribute("y", H - pad.b + 20);
+                txt.setAttribute("text-anchor", "middle"); txt.style.fill = "#94a3b8"; txt.style.fontSize = "11px";
+                txt.textContent = n;
+                svg.appendChild(txt);
+            });
+
+            // Axes labels
+            const xLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            xLabel.setAttribute("x", W / 2); xLabel.setAttribute("y", H - 8);
+            xLabel.setAttribute("text-anchor", "middle"); xLabel.style.fill = "#a7a5ff"; xLabel.style.fontSize = "13px"; xLabel.style.fontWeight = "700";
+            xLabel.textContent = "Input Size (n)";
+            svg.appendChild(xLabel);
+
+            const yLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            yLabel.setAttribute("x", 18); yLabel.setAttribute("y", H / 2);
+            yLabel.setAttribute("text-anchor", "middle"); yLabel.setAttribute("transform", `rotate(-90,18,${H/2})`);
+            yLabel.style.fill = "#a7a5ff"; yLabel.style.fontSize = "13px"; yLabel.style.fontWeight = "700";
+            yLabel.textContent = "Operations";
+            svg.appendChild(yLabel);
+
+            // Theoretical curve (dashed)
+            const theoPath = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+            theoPath.setAttribute("fill", "none"); theoPath.setAttribute("stroke", "#94a3b8");
+            theoPath.setAttribute("stroke-width", "2"); theoPath.setAttribute("stroke-dasharray", "8,4");
+            theoPath.setAttribute("points", theoPoints.map(d => `${sx(d.n)},${sy(d.ops)}`).join(' '));
+            svg.appendChild(theoPath);
+
+            // Actual curve
+            const actPath = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+            actPath.setAttribute("fill", "none"); actPath.setAttribute("stroke", "#a7a5ff");
+            actPath.setAttribute("stroke-width", "3");
+            actPath.setAttribute("points", dataPoints.map(d => `${sx(d.n)},${sy(d.ops)}`).join(' '));
+            svg.appendChild(actPath);
+
+            // Data points with glow
+            dataPoints.forEach(d => {
+                const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                c.setAttribute("cx", sx(d.n)); c.setAttribute("cy", sy(d.ops)); c.setAttribute("r", "5");
+                c.setAttribute("fill", "#a7a5ff"); c.setAttribute("stroke", "#fff"); c.setAttribute("stroke-width", "1");
+                c.style.filter = "drop-shadow(0 0 4px #a7a5ff)";
+                svg.appendChild(c);
+            });
+
+            // Legend
+            const lg = pad.l + 10;
+            [{color:'#a7a5ff',dash:'',label:'Actual'},{color:'#94a3b8',dash:'8,4',label:theoLabel}].forEach((item, i) => {
+                const yy = pad.t + 15 + i * 20;
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", lg); line.setAttribute("x2", lg + 25);
+                line.setAttribute("y1", yy); line.setAttribute("y2", yy);
+                line.setAttribute("stroke", item.color); line.setAttribute("stroke-width", "2");
+                if (item.dash) line.setAttribute("stroke-dasharray", item.dash);
+                svg.appendChild(line);
+                const txt = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                txt.setAttribute("x", lg + 30); txt.setAttribute("y", yy + 4);
+                txt.style.fill = item.color; txt.style.fontSize = "12px"; txt.style.fontWeight = "600";
+                txt.textContent = item.label;
+                svg.appendChild(txt);
+            });
+
+            statusElement.innerText = "PLOTTED";
+            stepDesc.innerText = `Plotted ${algoName} across ${sizes.length} input sizes. Compare the actual curve against ${theoLabel}.`;
         }
     </script>
 </body>
