@@ -523,6 +523,36 @@ body.mst-only {
 .mst-legend .legend-current { background: var(--mst-amber); }
 .mst-legend .legend-selected { background: var(--mst-green); }
 .mst-legend .legend-rejected { background: var(--mst-coral); }
+.topology-switch { display: inline-flex; height: 32px; border: 1px solid var(--mst-rule); border-radius: 4px; background: #edf0ea; }
+.topology-button { min-width: 62px; padding: 0 11px; border: 0; border-radius: 3px; background: transparent; color: var(--mst-muted); font: 600 10px 'DM Sans', sans-serif; cursor: pointer; }
+.topology-button.is-active { background: var(--mst-ink); color: var(--mst-lime); }
+.network-select-label { display: grid; gap: 3px; color: var(--mst-muted); font: 9px 'IBM Plex Mono', monospace; }
+.network-select-label select { width: 122px; height: 32px; padding: 0 7px; border: 1px solid var(--mst-rule); border-radius: 3px; background: #fff; color: var(--mst-ink); font: 10px 'IBM Plex Mono', monospace; }
+.network-select-label select:focus { outline: 2px solid var(--mst-lime); outline-offset: 1px; }
+.network-message-label { display: grid; gap: 3px; color: var(--mst-muted); font: 9px 'IBM Plex Mono', monospace; }
+.network-message-label input { width: 150px; height: 32px; padding: 0 8px; border: 1px solid var(--mst-rule); border-radius: 3px; background: #fff; color: var(--mst-ink); font: 10px 'DM Sans', sans-serif; }
+.network-message-label input:focus { outline: 2px solid var(--mst-lime); outline-offset: 1px; }
+.network-custom-menu { position: relative; margin-left: auto; color: var(--mst-ink); font-size: 10px; }
+.network-custom-menu summary { padding: 8px 10px; border: 1px solid var(--mst-rule); border-radius: 3px; cursor: pointer; list-style-position: inside; white-space: nowrap; }
+.network-custom-menu[open] summary { border-color: var(--mst-green); }
+.network-custom-controls { position: absolute; z-index: 4; top: 38px; right: 0; display: flex; width: max-content; max-width: min(620px, calc(100vw - 40px)); flex-wrap: wrap; align-items: flex-end; gap: 9px; padding: 12px; border: 1px solid var(--mst-rule); background: var(--mst-panel); box-shadow: 0 12px 26px rgba(28, 41, 35, .14); }
+.network-custom-controls .mst-edge-form { flex: initial; }
+.mst-builder-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; padding: 10px 0 12px; }
+.mst-edge-form { display: flex; flex: 1 1 360px; flex-wrap: wrap; align-items: flex-end; gap: 7px; }
+.mst-edge-form label { display: grid; gap: 3px; color: var(--mst-muted); font: 9px 'IBM Plex Mono', monospace; }
+.mst-edge-form select, .mst-edge-form input { width: 84px; height: 32px; padding: 0 7px; border: 1px solid var(--mst-rule); border-radius: 3px; background: #fff; color: var(--mst-ink); font: 11px 'IBM Plex Mono', monospace; }
+.mst-edge-form input { width: 92px; }
+.mst-edge-form select:focus, .mst-edge-form input:focus { outline: 2px solid var(--mst-lime); outline-offset: 1px; }
+.mst-editor-button, .mst-solve-button, .mst-text-button { min-height: 32px; padding: 0 10px; border: 1px solid var(--mst-rule); border-radius: 3px; background: var(--mst-panel); color: var(--mst-ink); font: 600 10px 'DM Sans', sans-serif; cursor: pointer; white-space: nowrap; }
+.mst-editor-button:hover { border-color: var(--mst-green); }
+.mst-editor-button.is-active { border-color: var(--mst-ink); background: var(--mst-lime); }
+.mst-builder-actions { display: flex; gap: 7px; }
+.mst-text-button { border-color: transparent; background: transparent; color: var(--mst-muted); }
+.mst-text-button:hover { color: var(--mst-ink); }
+.mst-solve-button { border-color: var(--mst-ink); background: var(--mst-ink); color: var(--mst-lime); }
+.mst-solve-button:hover { background: #2e4036; }
+.mst-editor-message { flex-basis: 100%; color: var(--mst-muted); font: 9px 'IBM Plex Mono', monospace; }
+.mst-editor-message.is-error { color: var(--mst-coral); }
 .mst-canvas-wrap { position: relative; flex: 1; min-height: 0; overflow: hidden; background-color: #f7f9f4; background-image: linear-gradient(rgba(28, 41, 35, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(28, 41, 35, .035) 1px, transparent 1px); background-size: 28px 28px; }
 .mst-stage { display: block; width: 100%; height: 100%; min-height: 310px; }
 .mst-canvas-label { position: absolute; right: 12px; bottom: 8px; left: 12px; display: flex; justify-content: space-between; gap: 10px; color: var(--mst-muted); font: 9px 'IBM Plex Mono', monospace; pointer-events: none; }
@@ -534,8 +564,22 @@ body.mst-only {
 .mst-node { fill: var(--mst-panel); stroke: var(--mst-ink); stroke-width: 2; transition: fill .18s ease, stroke .18s ease; }
 .mst-node.is-active { fill: var(--mst-lime); stroke: var(--mst-ink); stroke-width: 3; }
 .mst-node-label { fill: var(--mst-ink); font: 600 15px 'IBM Plex Mono', monospace; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.network-link { stroke: #b7c3ba; stroke-width: 3; transition: stroke .2s ease, stroke-width .2s ease, opacity .2s ease; }
+.network-link.is-route { stroke: var(--mst-green); stroke-width: 5; }
+.network-link.is-next { stroke: var(--mst-amber); stroke-width: 6; }
+.network-link-cost { fill: var(--mst-muted); stroke: #f7f9f4; stroke-width: 6px; paint-order: stroke; font: 500 13px 'IBM Plex Mono', monospace; text-anchor: middle; }
+.network-pc { cursor: pointer; }
+.network-pc-screen { fill: #fff; stroke: var(--mst-ink); stroke-width: 2.5; transition: fill .2s ease, stroke .2s ease; }
+.network-pc-stand { fill: var(--mst-ink); }
+.network-pc-label { fill: var(--mst-ink); font: 700 13px 'IBM Plex Mono', monospace; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.network-pc-name { fill: var(--mst-muted); font: 10px 'IBM Plex Mono', monospace; text-anchor: middle; pointer-events: none; }
+.network-pc:hover .network-pc-screen, .network-pc.is-sender .network-pc-screen { fill: var(--mst-lime); stroke: var(--mst-green); }
+.network-pc.is-switch .network-pc-screen { fill: #dce8e1; stroke: var(--mst-green); }
+.network-packet { pointer-events: none; transition: transform .6s cubic-bezier(.2,.8,.2,1); filter: drop-shadow(0 3px 4px rgba(28,41,35,.28)); }
+.network-packet-body { fill: var(--mst-amber); stroke: #fff; stroke-width: 3; }
+.network-packet-mark { fill: #fff; font: 700 7px 'IBM Plex Mono', monospace; text-anchor: middle; pointer-events: none; }
 
-.mst-inspector { display: flex; min-height: 0; flex-direction: column; gap: 12px; }
+.mst-inspector { display: flex; min-height: 0; flex-direction: column; gap: 12px; overflow-y: auto; }
 .mst-total-block { min-height: 120px; padding: 17px 19px; background: var(--mst-ink); color: #fff; }
 .mst-total-block .mst-kicker { color: #b7c3ba; }
 .mst-total-block strong { display: block; margin: 5px 0 0; color: var(--mst-lime); font: 600 42px 'IBM Plex Mono', monospace; line-height: 1; }
@@ -545,6 +589,10 @@ body.mst-only {
 .mst-metrics div + div { padding-left: 10px; border-left: 1px solid var(--mst-rule); }
 .mst-metrics span { display: block; color: var(--mst-muted); font-size: 10px; }
 .mst-metrics strong { display: block; margin-top: 4px; font: 600 18px 'IBM Plex Mono', monospace; }
+.mst-field-note { padding: 10px 12px; border-left: 3px solid var(--mst-green); background: #e8eee7; }
+.mst-field-note .mst-kicker { color: var(--mst-green); }
+.mst-field-note p { margin: 6px 0; color: #536157; font-size: 10px; line-height: 1.45; }
+.mst-field-note strong { display: block; color: var(--mst-ink); font-size: 10px; line-height: 1.4; }
 .mst-inspector-section, .mst-operation-section { min-height: 0; padding-top: 3px; }
 .mst-section-heading { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding-bottom: 9px; border-bottom: 1px solid var(--mst-rule); color: var(--mst-ink); font-size: 12px; font-weight: 700; }
 .mst-section-heading span:last-child { color: var(--mst-muted); font: 10px 'IBM Plex Mono', monospace; }
@@ -595,6 +643,10 @@ body.mst-only {
     .mst-graph-panel { min-height: 430px; padding: 14px 12px 10px; }
     .mst-panel-heading { flex-direction: column; gap: 10px; }
     .mst-legend { justify-content: flex-start; gap: 7px 12px; }
+    .mst-edge-form { flex-basis: 100%; }
+    .network-select-label select { width: 112px; }
+    .network-message-label input { width: 140px; }
+    .mst-builder-actions { margin-left: auto; }
     .mst-stage { min-height: 300px; }
     .mst-inspector { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .mst-total-block { min-height: 112px; }

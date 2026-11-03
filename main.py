@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request
+import heapq
 from math import isfinite
 import subprocess
 
@@ -227,6 +228,74 @@ def get_mst_steps():
     else:
         graph, steps, total_weight = build_mst_trace()
     return jsonify({"graph": graph, "steps": steps, "totalWeight": total_weight})
+
+
+def build_shortest_route(nodes, edges, source, target):
+    adjacency = {node: [] for node in nodes}
+    for edge in edges:
+        adjacency[edge["u"]].append((edge["v"], edge["weight"]))
+        adjacency[edge["v"]].append((edge["u"], edge["weight"]))
+
+    distances = {node: float('inf') for node in nodes}
+    previous = {}
+    distances[source] = 0
+    frontier = [(0, source)]
+    visited = set()
+    steps = []
+
+    while frontier:
+        distance, node = heapq.heappop(frontier)
+        if node in visited:
+            continue
+        visited.add(node)
+        steps.append({"type": "VISIT", "node": node, "distance": distance})
+        if node == target:
+            break
+
+        for neighbor, weight in sorted(adjacency[node], key=lambda item: item[0]):
+            candidate = distance + weight
+            if candidate < distances[neighbor]:
+                distances[neighbor] = candidate
+                previous[neighbor] = (node, weight)
+                heapq.heappush(frontier, (candidate, neighbor))
+                steps.append({"type": "RELAX", "u": node, "v": neighbor, "weight": weight, "distance": candidate})
+            else:
+                steps.append({"type": "KEEP", "u": node, "v": neighbor, "weight": weight, "distance": distances[neighbor]})
+
+    if distances[target] == float('inf'):
+        return None
+
+    path = [target]
+    path_edges = []
+    while path[-1] != source:
+        parent, weight = previous[path[-1]]
+        path_edges.append({"u": parent, "v": path[-1], "weight": weight})
+        path.append(parent)
+    path.reverse()
+    path_edges.reverse()
+    steps.append({"type": "DONE", "distance": distances[target], "path": path})
+    return {"path": path, "pathEdges": path_edges, "distance": distances[target], "steps": steps}
+
+
+@app.route('/network/route', methods=['POST'])
+def get_shortest_route():
+    try:
+        payload = request.get_json(silent=True)
+        nodes, edges = validate_mst_graph(payload)
+        source = payload.get("source")
+        target = payload.get("target")
+        if source not in nodes or target not in nodes:
+            raise ValueError("Choose a sender and receiver from the graph.")
+    except (AttributeError, ValueError) as error:
+        return jsonify({"error": str(error)}), 400
+
+    result = build_shortest_route(nodes, edges, source, target)
+    if result is None:
+        return jsonify({"error": "No route connects the selected sender and receiver."}), 400
+    result["graph"] = {"nodes": nodes, "edges": edges}
+    result["source"] = source
+    result["target"] = target
+    return jsonify(result)
 
 
 if __name__ == '__main__':

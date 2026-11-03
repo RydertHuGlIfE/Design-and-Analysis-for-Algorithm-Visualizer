@@ -5,64 +5,95 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edge Theory | Minimum Spanning Tree</title>
+    <title>Packet Path | Network Routing Studio</title>
 </head>
 <body class="mst-only">
     <main class="mst-studio">
         <header class="mst-topbar">
-            <a class="mst-brand" href="/" aria-label="Edge Theory home"><span class="mst-brand-mark">E</span><span>EDGE THEORY<small>ALGORITHM STUDY / 01</small></span></a>
-            <div class="mst-project-title"><span>GRAPH OPTIMIZATION</span><h1>Minimum spanning tree</h1></div>
-            <div class="mst-topbar-meta"><span class="mst-method">KRUSKAL <i></i> UNION-FIND</span><span class="mst-status" id="mst-status">LOADING</span></div>
+            <a class="mst-brand" href="/" aria-label="Packet Path home"><span class="mst-brand-mark">P</span><span>PACKET PATH<small>NETWORK LAB / 01</small></span></a>
+            <div class="mst-project-title"><span>ROUTE SIMULATOR</span><h1>How does a message get there?</h1></div>
+            <div class="mst-topbar-meta"><span class="mst-method">DIJKSTRA <i></i> SHORTEST PATH</span><span class="mst-status" id="mst-status">READY</span></div>
         </header>
 
         <section class="mst-workspace">
-            <section class="mst-graph-panel" aria-label="Minimum spanning tree graph">
+            <section class="mst-graph-panel" aria-label="Computer network topology">
                 <div class="mst-panel-heading">
-                    <div><span class="mst-kicker">NETWORK / 01</span><h2>Weighted graph</h2></div>
-                    <div class="mst-legend"><span><i class="legend-pending"></i>Pending</span><span><i class="legend-current"></i>Current</span><span><i class="legend-selected"></i>Selected</span><span><i class="legend-rejected"></i>Cycle</span></div>
+                    <div><span class="mst-kicker">NETWORK / 01</span><h2 id="network-topology-title">Star topology</h2></div>
+                    <div class="mst-legend"><span><i class="legend-pending"></i>Network link</span><span><i class="legend-current"></i>Checking</span><span><i class="legend-selected"></i>Route</span><span><i class="legend-rejected"></i>Other</span></div>
+                </div>
+                <div class="mst-builder-bar">
+                    <div class="topology-switch" role="group" aria-label="Choose network topology">
+                        <button class="topology-button is-active" id="topology-star" type="button">Star</button>
+                        <button class="topology-button" id="topology-mesh" type="button">Mesh</button>
+                    </div>
+                    <label class="network-select-label">Sender<select id="route-source"></select></label>
+                    <label class="network-select-label">Receiver<select id="route-target"></select></label>
+                    <label class="network-message-label">Message<input id="route-message" type="text" maxlength="48" value="Hello, network!" autocomplete="off"></label>
+                    <div class="mst-builder-actions">
+                        <button class="mst-text-button" id="network-clear" type="button">Clear</button>
+                        <button class="mst-solve-button" id="network-route" type="button">Send message</button>
+                    </div>
+                    <details class="network-custom-menu">
+                        <summary>Customize</summary>
+                        <div class="network-custom-controls">
+                            <button class="mst-editor-button" id="network-add-pc" type="button">Place PC</button>
+                            <form id="network-link-form" class="mst-edge-form">
+                                <label>PC<select id="network-link-from" required><option value="">From</option></select></label>
+                                <label>PC<select id="network-link-to" required><option value="">To</option></select></label>
+                                <label>Cost<input id="network-link-cost" type="number" min="1" step="1" value="1" required></label>
+                                <button class="mst-editor-button" type="submit">Add link</button>
+                            </form>
+                        </div>
+                    </details>
+                    <span class="mst-editor-message" id="network-message" role="status">Choose a topology and send a message.</span>
                 </div>
                 <div class="mst-canvas-wrap">
-                    <svg id="mst-stage" class="mst-stage" viewBox="0 0 900 600" role="img" aria-label="Weighted graph showing Kruskal's algorithm progress"></svg>
-                    <div class="mst-canvas-label"><span id="mst-network-count">Loading network</span><span>UNDIRECTED / WEIGHTED</span></div>
+                    <svg id="network-stage" class="mst-stage" viewBox="0 0 900 600" role="img" aria-label="Computer network and animated message route"></svg>
+                    <div class="mst-canvas-label"><span id="network-count">6 PCS / 5 LINKS</span><span>PACKET ROUTING / LINK COST</span></div>
                 </div>
             </section>
 
             <aside class="mst-inspector">
                 <section class="mst-total-block">
-                    <span class="mst-kicker">CURRENT TREE WEIGHT</span>
-                    <strong id="mst-total">--</strong>
-                    <span id="mst-total-caption">No edges selected</span>
+                    <span class="mst-kicker">SHORTEST ROUTE COST</span>
+                    <strong id="route-cost">--</strong>
+                    <span id="route-cost-caption">Waiting for a message</span>
                 </section>
-                <section class="mst-metrics" aria-label="Graph statistics">
-                    <div><span>Vertices</span><strong id="mst-vertices">--</strong></div>
-                    <div><span>Edges tested</span><strong id="mst-tested">0</strong></div>
-                    <div><span>Components</span><strong id="mst-components">--</strong></div>
+                <section class="mst-metrics" aria-label="Network statistics">
+                    <div><span>PCs</span><strong id="network-pc-count">6</strong></div>
+                    <div><span>Hops</span><strong id="route-hops">--</strong></div>
+                    <div><span>Visited</span><strong id="route-visited">0</strong></div>
+                </section>
+                <section class="mst-field-note">
+                    <span class="mst-kicker">PACKET INSPECTOR</span>
+                    <p id="route-description">Choose a sender and receiver. Dijkstra checks link costs, then the packet travels the cheapest available route.</p>
+                    <strong id="route-summary">No packet in transit.</strong>
                 </section>
                 <section class="mst-inspector-section">
-                    <div class="mst-section-heading"><span>Selected edges</span><span id="mst-edge-count">0 / 0</span></div>
-                    <ol id="mst-selected-edges" class="mst-selected-edges"><li class="mst-empty">Waiting for trace</li></ol>
+                    <div class="mst-section-heading"><span>Route sequence</span><span id="route-sequence-count">0 HOPS</span></div>
+                    <ol id="route-sequence" class="mst-selected-edges"><li class="mst-empty">Waiting for route</li></ol>
                 </section>
                 <section class="mst-operation-section" aria-live="polite">
-                    <div class="mst-section-heading"><span>Operation</span><span id="mst-operation-type">READY</span></div>
-                    <strong id="mst-operation-title">Ready to build the tree</strong>
-                    <p id="mst-operation-detail">Play the trace or drag the timeline to inspect each Kruskal operation.</p>
+                    <div class="mst-section-heading"><span>Network event</span><span id="route-event-type">READY</span></div>
+                    <strong id="route-event-title">Ready to route</strong>
+                    <p id="route-event-detail">The packet will move from PC to PC along the lowest-cost path.</p>
                 </section>
             </aside>
         </section>
 
         <footer class="mst-player">
             <div class="mst-player-top">
-                <div class="mst-player-label"><span class="mst-live-dot"></span><span>TRACE CONTROL</span><strong id="mst-step-label">STEP 0 / 0</strong></div>
+                <div class="mst-player-label"><span class="mst-live-dot"></span><span>PACKET CONTROL</span><strong id="mst-step-label">HOP 0 / 0</strong></div>
                 <div class="mst-player-actions">
-                    <button class="mst-control-button" id="mst-reset" type="button" aria-label="Restart trace" title="Restart trace">Restart</button>
-                    <button class="mst-control-button" id="mst-back" type="button" aria-label="Previous operation" title="Previous operation">Back</button>
-                    <button class="mst-play-button" id="mst-play" type="button" aria-label="Play trace">Play</button>
-                    <button class="mst-control-button" id="mst-forward" type="button" aria-label="Next operation" title="Next operation">Next</button>
+                    <button class="mst-control-button" id="route-reset" type="button" aria-label="Reset packet" title="Reset packet">Reset</button>
+                    <button class="mst-control-button" id="route-back" type="button" aria-label="Previous packet hop" title="Previous hop">Back</button>
+                    <button class="mst-play-button" id="route-play" type="button" aria-label="Play packet route">Play</button>
+                    <button class="mst-control-button" id="route-forward" type="button" aria-label="Next packet hop" title="Next hop">Next</button>
                 </div>
-                <label class="mst-speed-control" for="mst-speed"><span>PACE</span><input id="mst-speed" type="range" min="150" max="1200" step="50" value="600"><output id="mst-speed-label" for="mst-speed">1.0x</output></label>
+                <label class="mst-speed-control" for="route-speed"><span>PACE</span><input id="route-speed" type="range" min="200" max="1400" step="50" value="700"><output id="route-speed-label" for="route-speed">1.0x</output></label>
             </div>
-            <div class="mst-timeline-row"><span id="mst-time-current">00:00</span><input id="mst-timeline" type="range" min="0" max="0" value="0" aria-label="Trace timeline"><span id="mst-time-total">00:00</span></div>
-            <div class="mst-timeline-caption"><span id="mst-timeline-caption">Kruskal's algorithm trace</span><span>O(E log E) TIME <b>·</b> O(V) SPACE</span></div>
+            <div class="mst-timeline-row"><span id="route-time-current">00:00</span><input id="route-timeline" type="range" min="0" max="0" value="0" aria-label="Message route timeline"><span id="route-time-total">00:00</span></div>
+            <div class="mst-timeline-caption"><span id="route-timeline-caption">Shortest-path packet animation</span><span>DIJKSTRA <b>·</b> O((V + E) log V)</span></div>
         </footer>
     </main>
 
@@ -989,26 +1020,50 @@
             stepDesc.innerText = `Plotted ${algoName} across ${sizes.length} input sizes. Compare the actual curve against ${theoLabel}.`;
         }
     </script>
-    <script>
+    <script type="application/x-disabled">
         const mstStage = document.getElementById('mst-stage');
         const mstTimeline = document.getElementById('mst-timeline');
         const mstPlayButton = document.getElementById('mst-play');
         const mstSteps = [];
         const mstEdgeElements = new Map();
         const mstNodeElements = new Map();
+        const mstPointPositions = new Map();
         let mstCursor = 0;
         let mstDelay = 600;
         let mstTimer = null;
+        let mstGraph = { nodes: [], edges: [] };
+        let mstPlaceMode = false;
+        let mstScenario = null;
+        let mstPointNames = new Map();
+        const campusScenario = {
+            nodes: ['A', 'B', 'C', 'D', 'E', 'F'],
+            edges: [
+                { u: 'A', v: 'B', weight: 120 }, { u: 'A', v: 'D', weight: 170 },
+                { u: 'A', v: 'F', weight: 210 }, { u: 'B', v: 'C', weight: 160 },
+                { u: 'B', v: 'D', weight: 90 }, { u: 'B', v: 'E', weight: 230 },
+                { u: 'C', v: 'D', weight: 140 }, { u: 'C', v: 'E', weight: 110 },
+                { u: 'D', v: 'E', weight: 130 }, { u: 'D', v: 'F', weight: 150 },
+                { u: 'E', v: 'F', weight: 190 }
+            ]
+        };
+        const campusLocations = {
+            A: 'Administration', B: 'Library', C: 'Engineering Lab',
+            D: 'Student Center', E: 'Residence Hall', F: 'Data Center'
+        };
 
         const mstEdgeKey = (first, second) => `${first}-${second}`;
         const formatTraceTime = (seconds) => `00:${String(Math.floor(seconds)).padStart(2, '0')}`;
 
         function drawMstGraph(graph) {
+            mstStage.replaceChildren();
+            mstEdgeElements.clear();
+            mstNodeElements.clear();
             const points = {};
             const centerX = 450, centerY = 292, radius = 218;
             graph.nodes.forEach((node, index) => {
                 const angle = -Math.PI / 2 + (2 * Math.PI * index) / graph.nodes.length;
-                points[node] = { x: centerX + radius * Math.cos(angle), y: centerY + radius * Math.sin(angle) };
+                points[node] = mstPointPositions.get(node) || { x: centerX + radius * Math.cos(angle), y: centerY + radius * Math.sin(angle) };
+                mstPointPositions.set(node, points[node]);
             });
 
             graph.edges.forEach(edge => {
@@ -1034,21 +1089,188 @@
                 const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 circle.setAttribute('cx', point.x); circle.setAttribute('cy', point.y);
                 circle.setAttribute('r', '24'); circle.setAttribute('class', 'mst-node');
+                circle.setAttribute('data-node', node);
                 mstStage.appendChild(circle);
                 mstNodeElements.set(node, circle);
 
                 const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                 label.setAttribute('x', point.x); label.setAttribute('y', point.y);
                 label.setAttribute('class', 'mst-node-label');
+                label.setAttribute('data-node', node);
                 label.textContent = node;
                 mstStage.appendChild(label);
             });
 
+            ['mst-from', 'mst-to'].forEach(id => {
+                const select = document.getElementById(id);
+                const previousValue = select.value;
+                select.replaceChildren(new Option('Point', ''));
+                graph.nodes.forEach(node => select.add(new Option(node, node)));
+                if (graph.nodes.includes(previousValue)) select.value = previousValue;
+            });
+
             document.getElementById('mst-vertices').textContent = graph.nodes.length;
             document.getElementById('mst-components').textContent = graph.nodes.length;
-            document.getElementById('mst-network-count').textContent = `${graph.nodes.length} VERTICES / ${graph.edges.length} EDGES`;
-            document.getElementById('mst-edge-count').textContent = `0 / ${graph.nodes.length - 1}`;
+            document.getElementById('mst-network-count').textContent = `${graph.nodes.length} VERTICES / ${graph.edges.length} EDGES${mstScenario ? ' / METERS' : ''}`;
+            if (!mstSteps.length) document.getElementById('mst-edge-count').textContent = `0 / ${Math.max(0, graph.nodes.length - 1)}`;
         }
+
+        function setEditorMessage(message, isError = false) {
+            const element = document.getElementById('mst-editor-message');
+            element.textContent = message;
+            element.classList.toggle('is-error', isError);
+        }
+
+        function invalidateMstSolution(message) {
+            clearTimeout(mstTimer);
+            mstTimer = null;
+            mstPlayButton.textContent = 'Play';
+            mstPlayButton.setAttribute('aria-label', 'Play trace');
+            mstSteps.splice(0);
+            mstCursor = 0;
+            mstTimeline.max = 0;
+            renderMstCursor();
+            setMstStatus(mstGraph.nodes.length ? 'EDITING' : 'EMPTY');
+            setEditorMessage(message);
+        }
+
+        function addMstPoint(x, y) {
+            if (mstGraph.nodes.length >= 26) {
+                setEditorMessage('This graph has reached the 26-point limit.', true);
+                return;
+            }
+            const node = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].find(label => !mstGraph.nodes.includes(label));
+            mstGraph.nodes.push(node);
+            mstPointPositions.set(node, { x: Math.max(50, Math.min(850, x)), y: Math.max(65, Math.min(520, y)) });
+            drawMstGraph(mstGraph);
+            invalidateMstSolution(`Point ${node} placed. Add another point or connect it to an existing point.`);
+        }
+
+        function selectMstEndpoint(node) {
+            const from = document.getElementById('mst-from');
+            const to = document.getElementById('mst-to');
+            if (!from.value || to.value) {
+                from.value = node;
+                to.value = '';
+                setEditorMessage(`Point ${node} selected. Choose the second endpoint.`);
+            } else if (from.value === node) {
+                setEditorMessage('Choose a different point for the second endpoint.', true);
+            } else {
+                to.value = node;
+                setEditorMessage(`Endpoints ${from.value} and ${node} selected. Enter their distance.`);
+            }
+        }
+
+        function getMstSvgPoint(event) {
+            const matrix = mstStage.getScreenCTM();
+            if (!matrix) return null;
+            const point = mstStage.createSVGPoint();
+            point.x = event.clientX;
+            point.y = event.clientY;
+            return point.matrixTransform(matrix.inverse());
+        }
+
+        async function solveMstGraph() {
+            if (mstGraph.nodes.length < 2) {
+                setEditorMessage('Place at least two points before building an MST.', true);
+                return;
+            }
+            clearTimeout(mstTimer);
+            mstTimer = null;
+            setMstStatus('SOLVING');
+            setEditorMessage('Running Kruskal on your weighted graph...');
+            try {
+                const response = await fetch('/mst', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(mstGraph)
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Unable to solve this graph.');
+                mstGraph = data.graph;
+                mstSteps.splice(0, mstSteps.length, ...data.steps);
+                drawMstGraph(mstGraph);
+                mstTimeline.max = mstSteps.length;
+                mstCursor = 0;
+                renderMstCursor();
+                setMstStatus('READY');
+                setEditorMessage(`MST ready. Total minimum distance: ${data.totalWeight}.`);
+            } catch (error) {
+                setMstStatus('INVALID');
+                setEditorMessage(error.message, true);
+                document.getElementById('mst-operation-title').textContent = 'Graph needs attention';
+                document.getElementById('mst-operation-detail').textContent = error.message;
+            }
+        }
+
+        document.getElementById('mst-place-point').addEventListener('click', event => {
+            mstPlaceMode = !mstPlaceMode;
+            event.currentTarget.classList.toggle('is-active', mstPlaceMode);
+            setEditorMessage(mstPlaceMode ? 'Click an open spot on the canvas to place a point.' : 'Point placement cancelled.');
+        });
+        mstStage.addEventListener('click', event => {
+            const clickedNode = event.target.closest('[data-node]')?.getAttribute('data-node');
+            if (clickedNode) {
+                selectMstEndpoint(clickedNode);
+                return;
+            }
+            if (!mstPlaceMode) return;
+            const point = getMstSvgPoint(event);
+            if (!point) return;
+            mstPlaceMode = false;
+            document.getElementById('mst-place-point').classList.remove('is-active');
+            addMstPoint(point.x, point.y);
+        });
+        document.getElementById('mst-edge-form').addEventListener('submit', event => {
+            event.preventDefault();
+            const first = document.getElementById('mst-from').value;
+            const second = document.getElementById('mst-to').value;
+            const weight = Number(document.getElementById('mst-distance').value);
+            if (!first || !second || first === second) {
+                setEditorMessage('Choose two different points for the edge.', true);
+                return;
+            }
+            if (!Number.isFinite(weight) || weight < 0) {
+                setEditorMessage('Distance must be a finite, non-negative number.', true);
+                return;
+            }
+            if (mstGraph.edges.some(edge => (edge.u === first && edge.v === second) || (edge.u === second && edge.v === first))) {
+                setEditorMessage(`An edge already connects ${first} and ${second}.`, true);
+                return;
+            }
+            mstGraph.edges.push({ u: first, v: second, weight });
+            drawMstGraph(mstGraph);
+            invalidateMstSolution(`Edge ${first} - ${second} added with distance ${weight}.`);
+        });
+        document.getElementById('mst-clear-graph').addEventListener('click', () => {
+            mstGraph = { nodes: [], edges: [] };
+            mstPointPositions.clear();
+            mstPointNames.clear();
+            mstScenario = null;
+            mstPlaceMode = false;
+            document.getElementById('mst-place-point').classList.remove('is-active');
+            drawMstGraph(mstGraph);
+            document.getElementById('mst-field-result').textContent = 'Load the campus example to see a rollout plan.';
+            invalidateMstSolution('Graph cleared. Place points, then add weighted edges.');
+        });
+        document.getElementById('mst-campus-example').addEventListener('click', () => {
+            mstScenario = { name: 'Campus fiber rollout', units: 'm' };
+            mstGraph = {
+                nodes: [...campusScenario.nodes],
+                edges: campusScenario.edges.map(edge => ({ ...edge }))
+            };
+            mstPointNames = new Map(Object.entries(campusLocations));
+            mstPointPositions.clear();
+            mstPointPositions.set('A', { x: 180, y: 145 });
+            mstPointPositions.set('B', { x: 405, y: 105 });
+            mstPointPositions.set('C', { x: 680, y: 205 });
+            mstPointPositions.set('D', { x: 310, y: 325 });
+            mstPointPositions.set('E', { x: 580, y: 430 });
+            mstPointPositions.set('F', { x: 170, y: 455 });
+            drawMstGraph(mstGraph);
+            invalidateMstSolution('Campus network loaded: edge weights are candidate cable lengths in meters. Build its MST to plan the backbone.');
+        });
+        document.getElementById('mst-solve').addEventListener('click', solveMstGraph);
 
         function describeMstOperation(step) {
             if (!step) return ['Ready to build the tree', 'Play the trace or drag the timeline to inspect each Kruskal operation.'];
@@ -1093,10 +1315,19 @@
 
             const totalWeight = selected.reduce((sum, edge) => sum + edge.weight, 0);
             document.getElementById('mst-total').textContent = totalWeight;
-            document.getElementById('mst-total-caption').textContent = selected.length ? `${selected.length} edges in the tree` : 'No edges selected';
+            document.getElementById('mst-total-caption').textContent = selected.length ? `${selected.length} ${mstScenario ? 'links · meters' : 'edges selected'}` : 'No edges selected';
             document.getElementById('mst-tested').textContent = tested;
             document.getElementById('mst-components').textContent = mstNodeElements.size - selected.length;
             document.getElementById('mst-edge-count').textContent = `${selected.length} / ${mstNodeElements.size - 1}`;
+            const fieldResult = document.getElementById('mst-field-result');
+            if (mstScenario) {
+                fieldResult.textContent = selected.length
+                    ? `${selected.length} routes chosen · ${totalWeight} m of cable planned.`
+                    : 'Campus network ready. Build the MST to calculate the cable plan.';
+                if (current?.type === 'DONE') fieldResult.textContent = `Install ${totalWeight} m of cable to connect all six campus buildings.`;
+            } else {
+                fieldResult.textContent = 'Your custom edge weights are treated as distance units.';
+            }
 
             const selectedList = document.getElementById('mst-selected-edges');
             selectedList.replaceChildren();
@@ -1110,8 +1341,8 @@
                     const item = document.createElement('li');
                     const endpoints = document.createElement('span');
                     const weight = document.createElement('span');
-                    endpoints.textContent = `${edge.u} - ${edge.v}`;
-                    weight.textContent = edge.weight;
+                    endpoints.textContent = `${mstPointNames.get(edge.u) || edge.u} - ${mstPointNames.get(edge.v) || edge.v}`;
+                    weight.textContent = `${edge.weight}${mstScenario ? ' m' : ''}`;
                     item.append(endpoints, weight);
                     selectedList.appendChild(item);
                 });
@@ -1196,17 +1427,414 @@
                 return response.json();
             })
             .then(data => {
-                mstSteps.push(...data.steps);
+                mstGraph = data.graph;
+                mstSteps.splice(0, mstSteps.length, ...data.steps);
                 drawMstGraph(data.graph);
                 mstTimeline.max = mstSteps.length;
                 renderMstCursor();
                 setMstStatus('READY');
+                setEditorMessage('Starter graph loaded. Add points or edges, then build its MST.');
             })
             .catch(error => {
                 setMstStatus('ERROR');
                 document.getElementById('mst-operation-title').textContent = 'Trace unavailable';
                 document.getElementById('mst-operation-detail').textContent = error.message;
             });
+    </script>
+    <script>
+        const networkStage = document.getElementById('network-stage');
+        const routeTimeline = document.getElementById('route-timeline');
+        const routePlayButton = document.getElementById('route-play');
+        const networkEdgeElements = new Map();
+        const networkNodeElements = new Map();
+        const networkPositions = new Map();
+        const networkNames = new Map();
+        let networkGraph = { nodes: [], edges: [] };
+        let networkRoute = null;
+        let networkCursor = 0;
+        let networkTimer = null;
+        let networkDelay = 700;
+        let networkPlaceMode = false;
+        let networkTopology = 'star';
+
+        const topologyPresets = {
+            star: {
+                nodes: ['R', 'A', 'B', 'C', 'D', 'E'],
+                names: { R: 'SWITCH', A: 'PC-01', B: 'PC-02', C: 'PC-03', D: 'PC-04', E: 'PC-05' },
+                edges: [
+                    { u: 'R', v: 'A', weight: 2 }, { u: 'R', v: 'B', weight: 1 },
+                    { u: 'R', v: 'C', weight: 2 }, { u: 'R', v: 'D', weight: 3 },
+                    { u: 'R', v: 'E', weight: 2 }
+                ]
+            },
+            mesh: {
+                nodes: ['A', 'B', 'C', 'D', 'E', 'F'],
+                names: { A: 'PC-01', B: 'PC-02', C: 'PC-03', D: 'PC-04', E: 'PC-05', F: 'PC-06' },
+                edges: [
+                    { u: 'A', v: 'B', weight: 4 }, { u: 'A', v: 'C', weight: 2 },
+                    { u: 'A', v: 'D', weight: 7 }, { u: 'A', v: 'E', weight: 5 },
+                    { u: 'A', v: 'F', weight: 8 }, { u: 'B', v: 'C', weight: 1 },
+                    { u: 'B', v: 'D', weight: 3 }, { u: 'B', v: 'E', weight: 6 },
+                    { u: 'B', v: 'F', weight: 5 }, { u: 'C', v: 'D', weight: 4 },
+                    { u: 'C', v: 'E', weight: 2 }, { u: 'C', v: 'F', weight: 6 },
+                    { u: 'D', v: 'E', weight: 1 }, { u: 'D', v: 'F', weight: 3 },
+                    { u: 'E', v: 'F', weight: 2 }
+                ]
+            }
+        };
+
+        const networkLabel = node => networkNames.get(node) || `PC-${node}`;
+
+        function seedNetworkPositions() {
+            networkPositions.clear();
+            if (networkTopology === 'star' && networkGraph.nodes.includes('R')) {
+                networkPositions.set('R', { x: 450, y: 300 });
+                const computers = networkGraph.nodes.filter(node => node !== 'R');
+                computers.forEach((node, index) => {
+                    const angle = -Math.PI / 2 + (2 * Math.PI * index) / computers.length;
+                    networkPositions.set(node, { x: 450 + 280 * Math.cos(angle), y: 300 + 210 * Math.sin(angle) });
+                });
+                return;
+            }
+            networkGraph.nodes.forEach((node, index) => {
+                const angle = -Math.PI / 2 + (2 * Math.PI * index) / networkGraph.nodes.length;
+                networkPositions.set(node, { x: 450 + 300 * Math.cos(angle), y: 300 + 220 * Math.sin(angle) });
+            });
+        }
+
+        function updateNetworkSelectors() {
+            ['route-source', 'route-target', 'network-link-from', 'network-link-to'].forEach(id => {
+                const select = document.getElementById(id);
+                const oldValue = select.value;
+                const placeholder = id === 'route-source' ? 'Choose sender' : id === 'route-target' ? 'Choose receiver' : 'Choose PC';
+                select.replaceChildren(new Option(placeholder, ''));
+                networkGraph.nodes.forEach(node => select.add(new Option(networkLabel(node), node)));
+                if (networkGraph.nodes.includes(oldValue)) select.value = oldValue;
+            });
+            document.getElementById('network-pc-count').textContent = networkGraph.nodes.length;
+            document.getElementById('network-count').textContent = `${networkGraph.nodes.length} PCS / ${networkGraph.edges.length} LINKS`;
+        }
+
+        function drawNetwork() {
+            networkStage.replaceChildren();
+            networkEdgeElements.clear();
+            networkNodeElements.clear();
+
+            networkGraph.edges.forEach(edge => {
+                const first = networkPositions.get(edge.u), second = networkPositions.get(edge.v);
+                if (!first || !second) return;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', first.x); line.setAttribute('y1', first.y);
+                line.setAttribute('x2', second.x); line.setAttribute('y2', second.y);
+                line.setAttribute('class', 'network-link');
+                networkStage.appendChild(line);
+                networkEdgeElements.set(`${edge.u}-${edge.v}`, line);
+
+                const cost = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                cost.setAttribute('x', (first.x + second.x) / 2);
+                cost.setAttribute('y', (first.y + second.y) / 2 - 9);
+                cost.setAttribute('class', 'network-link-cost');
+                cost.textContent = edge.weight;
+                networkStage.appendChild(cost);
+            });
+
+            networkGraph.nodes.forEach(node => {
+                const point = networkPositions.get(node);
+                if (!point) return;
+                const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                group.setAttribute('class', `network-pc${node === 'R' && networkTopology === 'star' ? ' is-switch' : ''}`);
+                group.setAttribute('transform', `translate(${point.x} ${point.y})`);
+                group.setAttribute('data-node', node);
+
+                const screen = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                screen.setAttribute('x', '-31'); screen.setAttribute('y', '-25');
+                screen.setAttribute('width', '62'); screen.setAttribute('height', '43');
+                screen.setAttribute('rx', '7'); screen.setAttribute('class', 'network-pc-screen');
+                group.appendChild(screen);
+                const stand = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                stand.setAttribute('d', 'M-9 19 L-12 26 L12 26 L9 19');
+                stand.setAttribute('class', 'network-pc-stand');
+                group.appendChild(stand);
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('y', '2'); label.setAttribute('class', 'network-pc-label');
+                label.textContent = node === 'R' && networkTopology === 'star' ? 'SW' : node;
+                group.appendChild(label);
+                const name = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                name.setAttribute('y', '43'); name.setAttribute('class', 'network-pc-name');
+                name.textContent = networkLabel(node);
+                group.appendChild(name);
+                networkStage.appendChild(group);
+                networkNodeElements.set(node, group);
+            });
+
+            const packet = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            packet.setAttribute('id', 'network-packet');
+            packet.setAttribute('class', 'network-packet');
+            packet.style.display = 'none';
+            const packetBody = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            packetBody.setAttribute('r', '15'); packetBody.setAttribute('class', 'network-packet-body');
+            packet.appendChild(packetBody);
+            const packetMark = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            packetMark.setAttribute('y', '4'); packetMark.setAttribute('class', 'network-packet-mark');
+            packetMark.textContent = 'MSG';
+            packet.appendChild(packetMark);
+            networkStage.appendChild(packet);
+            updateNetworkSelectors();
+            updateNetworkRouteView();
+        }
+
+        function setNetworkMessage(message, isError = false) {
+            const element = document.getElementById('network-message');
+            element.textContent = message;
+            element.classList.toggle('is-error', isError);
+        }
+
+        function resetNetworkRoute() {
+            clearTimeout(networkTimer);
+            networkTimer = null;
+            routePlayButton.textContent = 'Play';
+            routePlayButton.setAttribute('aria-label', 'Play packet route');
+            networkRoute = null;
+            networkCursor = 0;
+            routeTimeline.max = 0;
+            document.getElementById('route-cost').textContent = '--';
+            document.getElementById('route-cost-caption').textContent = 'Waiting for a message';
+            document.getElementById('route-hops').textContent = '--';
+            document.getElementById('route-visited').textContent = '0';
+            document.getElementById('route-sequence-count').textContent = '0 HOPS';
+            document.getElementById('route-summary').textContent = 'No packet in transit.';
+            document.getElementById('route-description').textContent = 'Choose a sender and receiver. Dijkstra checks link costs, then the packet travels the cheapest available route.';
+            document.getElementById('route-event-type').textContent = 'READY';
+            document.getElementById('route-event-title').textContent = 'Ready to route';
+            document.getElementById('route-event-detail').textContent = 'The packet will move from PC to PC along the lowest-cost path.';
+            document.getElementById('mst-step-label').textContent = 'HOP 0 / 0';
+            document.getElementById('route-timeline-caption').textContent = 'Shortest-path packet animation';
+            document.getElementById('route-time-current').textContent = '00:00';
+            document.getElementById('route-time-total').textContent = '00:00';
+            document.getElementById('route-back').disabled = true;
+            document.getElementById('route-forward').disabled = true;
+            document.getElementById('route-sequence').innerHTML = '<li class="mst-empty">Waiting for route</li>';
+            document.getElementById('mst-status').textContent = 'READY';
+            setNetworkMessage('Choose a sender and receiver, then send a message.');
+            drawNetwork();
+        }
+
+        function loadTopology(name) {
+            networkTopology = name;
+            const preset = topologyPresets[name];
+            networkGraph = { nodes: [...preset.nodes], edges: preset.edges.map(edge => ({ ...edge })) };
+            networkNames.clear();
+            Object.entries(preset.names).forEach(([node, label]) => networkNames.set(node, label));
+            seedNetworkPositions();
+            document.getElementById('network-topology-title').textContent = name === 'star' ? 'Star topology' : 'Mesh topology';
+            document.getElementById('topology-star').classList.toggle('is-active', name === 'star');
+            document.getElementById('topology-mesh').classList.toggle('is-active', name === 'mesh');
+            resetNetworkRoute();
+            setNetworkMessage(`${name === 'star' ? 'Star' : 'Mesh'} network loaded. Select two PCs and send a message.`);
+        }
+
+        async function sendNetworkMessage() {
+            const source = document.getElementById('route-source').value;
+            const target = document.getElementById('route-target').value;
+            const message = document.getElementById('route-message').value.trim();
+            if (!source || !target) {
+                setNetworkMessage('Choose both a sender and a receiver.', true);
+                return;
+            }
+            if (!message) {
+                setNetworkMessage('Write a message before sending the packet.', true);
+                return;
+            }
+            if (source === target) {
+                setNetworkMessage('Choose two different PCs to send a message.', true);
+                return;
+            }
+            resetNetworkRoute();
+            document.getElementById('mst-status').textContent = 'ROUTING';
+            setNetworkMessage(`Finding a route from ${networkLabel(source)} to ${networkLabel(target)}...`);
+            try {
+                const response = await fetch('/network/route', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...networkGraph, source, target })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Unable to find a route.');
+                networkRoute = data;
+                routeTimeline.max = data.pathEdges.length;
+                document.getElementById('route-cost').textContent = data.distance;
+                document.getElementById('route-cost-caption').textContent = `cost units · ${data.pathEdges.length} ${data.pathEdges.length === 1 ? 'hop' : 'hops'}`;
+                document.getElementById('route-hops').textContent = data.pathEdges.length;
+                document.getElementById('route-visited').textContent = data.steps.filter(step => step.type === 'VISIT').length;
+                document.getElementById('route-sequence-count').textContent = `${data.pathEdges.length} HOPS`;
+                document.getElementById('route-description').textContent = `Dijkstra checked ${data.steps.filter(step => step.type === 'VISIT').length} PCs. The message follows the lowest total link cost.`;
+                document.getElementById('route-summary').textContent = `“${message}” · ${networkLabel(source)} → ${networkLabel(target)}`;
+                const list = document.getElementById('route-sequence');
+                list.replaceChildren();
+                data.path.forEach((node, index) => {
+                    const item = document.createElement('li');
+                    const endpoint = document.createElement('span');
+                    const cost = document.createElement('span');
+                    endpoint.textContent = `${index + 1}. ${networkLabel(node)}`;
+                    cost.textContent = index < data.pathEdges.length ? `${data.pathEdges[index].weight} cost` : 'DEST';
+                    item.append(endpoint, cost);
+                    list.appendChild(item);
+                });
+                document.getElementById('mst-status').textContent = 'ROUTE FOUND';
+                setNetworkMessage(`Shortest path found. Press Play to deliver the packet hop by hop.`);
+                updateNetworkRouteView();
+            } catch (error) {
+                document.getElementById('mst-status').textContent = 'NO ROUTE';
+                document.getElementById('route-event-title').textContent = 'Message not delivered';
+                document.getElementById('route-event-detail').textContent = error.message;
+                setNetworkMessage(error.message, true);
+            }
+        }
+
+        function updateNetworkRouteView() {
+            networkEdgeElements.forEach((line, key) => {
+                const routeIndex = networkRoute?.pathEdges.findIndex(edge => `${edge.u}-${edge.v}` === key || `${edge.v}-${edge.u}` === key) ?? -1;
+                line.setAttribute('class', `network-link${routeIndex >= 0 ? ' is-route' : ''}${routeIndex === networkCursor && networkCursor < (networkRoute?.pathEdges.length || 0) ? ' is-next' : ''}`);
+            });
+            const packet = document.getElementById('network-packet');
+            if (!packet || !networkRoute) return;
+            const node = networkRoute.path[Math.min(networkCursor, networkRoute.path.length - 1)];
+            const position = networkPositions.get(node);
+            packet.style.display = 'block';
+            packet.setAttribute('transform', `translate(${position.x} ${position.y - 42})`);
+            networkNodeElements.forEach((group, label) => group.classList.toggle('is-sender', label === networkRoute.source));
+
+            const finished = networkCursor >= networkRoute.pathEdges.length;
+            document.getElementById('mst-step-label').textContent = `HOP ${networkCursor} / ${networkRoute.pathEdges.length}`;
+            document.getElementById('route-timeline-caption').textContent = finished ? 'Message delivered successfully' : networkCursor ? `Packet at ${networkLabel(node)} · next hop ${networkLabel(networkRoute.path[networkCursor + 1])}` : `Ready to send · ${networkLabel(networkRoute.source)} → ${networkLabel(networkRoute.target)}`;
+            document.getElementById('route-time-current').textContent = `00:${String(Math.floor(networkCursor * networkDelay / 1000)).padStart(2, '0')}`;
+            document.getElementById('route-time-total').textContent = `00:${String(Math.floor(networkRoute.pathEdges.length * networkDelay / 1000)).padStart(2, '0')}`;
+            document.getElementById('route-back').disabled = networkCursor === 0;
+            document.getElementById('route-forward').disabled = finished;
+            document.getElementById('route-event-type').textContent = finished ? 'DELIVERED' : networkCursor ? `HOP ${networkCursor}` : 'READY';
+            document.getElementById('route-event-title').textContent = finished ? 'Message delivered' : networkCursor ? `Packet reached ${networkLabel(node)}` : 'Ready to transmit';
+            document.getElementById('route-event-detail').textContent = finished ? `The message reached ${networkLabel(networkRoute.target)} with total route cost ${networkRoute.distance}.` : `The packet is traveling from ${networkLabel(networkRoute.source)} to ${networkLabel(networkRoute.target)}.`;
+            if (finished) {
+                document.getElementById('mst-status').textContent = 'DELIVERED';
+                const message = document.getElementById('route-message').value.trim();
+                document.getElementById('route-summary').textContent = `“${message}” delivered · cost ${networkRoute.distance}.`;
+            }
+            routeTimeline.value = networkCursor;
+        }
+
+        function pauseNetworkRoute() {
+            clearTimeout(networkTimer);
+            networkTimer = null;
+            routePlayButton.textContent = 'Play';
+            routePlayButton.setAttribute('aria-label', 'Play packet route');
+        }
+
+        function advanceNetworkPacket() {
+            if (!networkRoute || networkCursor >= networkRoute.pathEdges.length) {
+                pauseNetworkRoute();
+                updateNetworkRouteView();
+                return;
+            }
+            networkCursor++;
+            updateNetworkRouteView();
+            if (networkCursor < networkRoute.pathEdges.length) networkTimer = setTimeout(advanceNetworkPacket, networkDelay);
+            else pauseNetworkRoute();
+        }
+
+        function seekNetworkPacket(value) {
+            pauseNetworkRoute();
+            if (!networkRoute) return;
+            networkCursor = Math.max(0, Math.min(networkRoute.pathEdges.length, Number(value)));
+            updateNetworkRouteView();
+        }
+
+        document.getElementById('topology-star').addEventListener('click', () => loadTopology('star'));
+        document.getElementById('topology-mesh').addEventListener('click', () => loadTopology('mesh'));
+        document.getElementById('network-route').addEventListener('click', sendNetworkMessage);
+        document.getElementById('route-play').addEventListener('click', () => {
+            if (!networkRoute) {
+                setNetworkMessage('Send a message first to calculate its route.', true);
+                return;
+            }
+            if (networkTimer) {
+                pauseNetworkRoute();
+                return;
+            }
+            if (networkCursor >= networkRoute.pathEdges.length) networkCursor = 0;
+            routePlayButton.textContent = 'Pause';
+            routePlayButton.setAttribute('aria-label', 'Pause packet route');
+            advanceNetworkPacket();
+        });
+        document.getElementById('route-reset').addEventListener('click', () => seekNetworkPacket(0));
+        document.getElementById('route-back').addEventListener('click', () => seekNetworkPacket(networkCursor - 1));
+        document.getElementById('route-forward').addEventListener('click', () => seekNetworkPacket(networkCursor + 1));
+        routeTimeline.addEventListener('input', event => seekNetworkPacket(event.target.value));
+        document.getElementById('route-speed').addEventListener('input', event => {
+            networkDelay = Number(event.target.value);
+            document.getElementById('route-speed-label').textContent = `${(700 / networkDelay).toFixed(1)}x`;
+            updateNetworkRouteView();
+            if (networkTimer) {
+                clearTimeout(networkTimer);
+                networkTimer = setTimeout(advanceNetworkPacket, networkDelay);
+            }
+        });
+        document.getElementById('network-add-pc').addEventListener('click', event => {
+            networkPlaceMode = !networkPlaceMode;
+            event.currentTarget.classList.toggle('is-active', networkPlaceMode);
+            setNetworkMessage(networkPlaceMode ? 'Click the canvas to place a PC.' : 'PC placement cancelled.');
+        });
+        networkStage.addEventListener('click', event => {
+            if (event.target.closest('[data-node]') || !networkPlaceMode) return;
+            if (networkGraph.nodes.length >= 26) {
+                setNetworkMessage('The network has reached the 26-PC limit.', true);
+                return;
+            }
+            const matrix = networkStage.getScreenCTM();
+            if (!matrix) return;
+            const point = networkStage.createSVGPoint();
+            point.x = event.clientX; point.y = event.clientY;
+            const local = point.matrixTransform(matrix.inverse());
+            const node = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'].find(label => !networkGraph.nodes.includes(label));
+            networkGraph.nodes.push(node);
+            networkNames.set(node, `PC-${String(networkGraph.nodes.length).padStart(2, '0')}`);
+            networkPositions.set(node, { x: Math.max(45, Math.min(855, local.x)), y: Math.max(65, Math.min(520, local.y)) });
+            networkPlaceMode = false;
+            document.getElementById('network-add-pc').classList.remove('is-active');
+            resetNetworkRoute();
+            setNetworkMessage(`${networkLabel(node)} added. Add a link before routing through it.`);
+        });
+        document.getElementById('network-link-form').addEventListener('submit', event => {
+            event.preventDefault();
+            const first = document.getElementById('network-link-from').value;
+            const second = document.getElementById('network-link-to').value;
+            const weight = Number(document.getElementById('network-link-cost').value);
+            if (!first || !second || first === second || !Number.isInteger(weight) || weight < 1) {
+                setNetworkMessage('Choose two different PCs and a positive whole-number link cost.', true);
+                return;
+            }
+            if (networkGraph.edges.some(edge => (edge.u === first && edge.v === second) || (edge.u === second && edge.v === first))) {
+                setNetworkMessage('Those PCs already have a direct link.', true);
+                return;
+            }
+            networkGraph.edges.push({ u: first, v: second, weight });
+            resetNetworkRoute();
+            setNetworkMessage(`Link added: ${networkLabel(first)} to ${networkLabel(second)}, cost ${weight}.`);
+        });
+        document.getElementById('network-clear').addEventListener('click', () => {
+            networkTopology = 'custom';
+            networkGraph = { nodes: [], edges: [] };
+            networkNames.clear();
+            networkPositions.clear();
+            document.getElementById('network-topology-title').textContent = 'Custom network';
+            document.getElementById('topology-star').classList.remove('is-active');
+            document.getElementById('topology-mesh').classList.remove('is-active');
+            resetNetworkRoute();
+            setNetworkMessage('Network cleared. Open Customize to place PCs and connect them.');
+        });
+
+        loadTopology('star');
+        document.getElementById('route-source').value = 'A';
+        document.getElementById('route-target').value = 'E';
     </script>
 </body>
 </html>
