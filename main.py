@@ -298,5 +298,73 @@ def get_shortest_route():
     return jsonify(result)
 
 
+@app.route('/network/routes', methods=['POST'])
+def get_shortest_routes():
+    try:
+        payload = request.get_json(silent=True)
+        nodes, edges = validate_mst_graph(payload)
+        source = payload.get("source")
+        targets = payload.get("targets")
+        if source not in nodes:
+            raise ValueError("Choose a sender from the network.")
+        if not isinstance(targets, list) or not targets:
+            raise ValueError("Choose at least one receiver.")
+        if any(target not in nodes or target == source for target in targets):
+            raise ValueError("Receivers must be different PCs in the network.")
+        if len(set(targets)) != len(targets):
+            raise ValueError("Each receiver can only be selected once.")
+    except (AttributeError, TypeError, ValueError) as error:
+        return jsonify({"error": str(error)}), 400
+
+    adjacency = {node: [] for node in nodes}
+    for edge in edges:
+        adjacency[edge["u"]].append((edge["v"], edge["weight"]))
+        adjacency[edge["v"]].append((edge["u"], edge["weight"]))
+
+    distances = {node: float('inf') for node in nodes}
+    previous = {}
+    distances[source] = 0
+    frontier = [(0, source)]
+    steps = []
+    while frontier:
+        distance, node = heapq.heappop(frontier)
+        if distance != distances[node]:
+            continue
+        steps.append({"type": "VISIT", "node": node, "distance": distance})
+        for neighbor, weight in sorted(adjacency[node], key=lambda item: item[0]):
+            candidate = distance + weight
+            if candidate < distances[neighbor]:
+                distances[neighbor] = candidate
+                previous[neighbor] = (node, weight)
+                heapq.heappush(frontier, (candidate, neighbor))
+                steps.append({"type": "RELAX", "u": node, "v": neighbor, "weight": weight, "distance": candidate})
+
+    unreachable = [target for target in targets if distances[target] == float('inf')]
+    if unreachable:
+        return jsonify({"error": f"No route reaches: {', '.join(unreachable)}."}), 400
+
+    routes = []
+    for target in targets:
+        path = [target]
+        path_edges = []
+        while path[-1] != source:
+            parent, weight = previous[path[-1]]
+            path_edges.append({"u": parent, "v": path[-1], "weight": weight})
+            path.append(parent)
+        path.reverse()
+        path_edges.reverse()
+        routes.append({"target": target, "path": path, "pathEdges": path_edges, "distance": distances[target]})
+
+    return jsonify({
+        "graph": {"nodes": nodes, "edges": edges},
+        "source": source,
+        "targets": targets,
+        "routes": routes,
+        "steps": steps,
+        "totalDistance": sum(route["distance"] for route in routes),
+        "totalHops": sum(len(route["pathEdges"]) for route in routes),
+    })
+
+
 if __name__ == '__main__':
     app.run(debug=False, port=5000)

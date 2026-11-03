@@ -529,6 +529,13 @@ body.mst-only {
 .network-select-label { display: grid; gap: 3px; color: var(--mst-muted); font: 9px 'IBM Plex Mono', monospace; }
 .network-select-label select { width: 122px; height: 32px; padding: 0 7px; border: 1px solid var(--mst-rule); border-radius: 3px; background: #fff; color: var(--mst-ink); font: 10px 'IBM Plex Mono', monospace; }
 .network-select-label select:focus { outline: 2px solid var(--mst-lime); outline-offset: 1px; }
+.network-target-menu { position: relative; color: var(--mst-ink); font-size: 10px; }
+.network-target-menu summary { min-width: 136px; padding: 8px 10px; border: 1px solid var(--mst-rule); border-radius: 3px; background: #fff; cursor: pointer; list-style-position: inside; white-space: nowrap; }
+.network-target-menu[open] summary { border-color: var(--mst-green); }
+.network-target-options { position: absolute; z-index: 5; top: 38px; left: 0; display: grid; min-width: 180px; max-height: 220px; gap: 2px; padding: 7px; overflow-y: auto; border: 1px solid var(--mst-rule); background: var(--mst-panel); box-shadow: 0 12px 26px rgba(28, 41, 35, .14); }
+.network-target-options label { display: flex; align-items: center; gap: 8px; padding: 6px; color: var(--mst-ink); font-size: 11px; cursor: pointer; }
+.network-target-options label:hover { background: #edf2eb; }
+.network-target-options input { accent-color: var(--mst-green); }
 .network-message-label { display: grid; gap: 3px; color: var(--mst-muted); font: 9px 'IBM Plex Mono', monospace; }
 .network-message-label input { width: 150px; height: 32px; padding: 0 8px; border: 1px solid var(--mst-rule); border-radius: 3px; background: #fff; color: var(--mst-ink); font: 10px 'DM Sans', sans-serif; }
 .network-message-label input:focus { outline: 2px solid var(--mst-lime); outline-offset: 1px; }
@@ -549,6 +556,8 @@ body.mst-only {
 .mst-builder-actions { display: flex; gap: 7px; }
 .mst-text-button { border-color: transparent; background: transparent; color: var(--mst-muted); }
 .mst-text-button:hover { color: var(--mst-ink); }
+.network-broadcast-button { border-color: var(--mst-green); color: var(--mst-green); }
+.network-broadcast-button:hover { background: #e8eee7; }
 .mst-solve-button { border-color: var(--mst-ink); background: var(--mst-ink); color: var(--mst-lime); }
 .mst-solve-button:hover { background: #2e4036; }
 .mst-editor-message { flex-basis: 100%; color: var(--mst-muted); font: 9px 'IBM Plex Mono', monospace; }
@@ -569,6 +578,8 @@ body.mst-only {
 .network-link.is-next { stroke: var(--mst-amber); stroke-width: 6; }
 .network-link-cost { fill: var(--mst-muted); stroke: #f7f9f4; stroke-width: 6px; paint-order: stroke; font: 500 13px 'IBM Plex Mono', monospace; text-anchor: middle; }
 .network-pc { cursor: pointer; }
+.mst-stage.is-connecting { cursor: crosshair; }
+.mst-stage.is-connecting .network-pc-screen { stroke: var(--mst-green); }
 .network-pc-screen { fill: #fff; stroke: var(--mst-ink); stroke-width: 2.5; transition: fill .2s ease, stroke .2s ease; }
 .network-pc-stand { fill: var(--mst-ink); }
 .network-pc-label { fill: var(--mst-ink); font: 700 13px 'IBM Plex Mono', monospace; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
@@ -645,6 +656,7 @@ body.mst-only {
     .mst-legend { justify-content: flex-start; gap: 7px 12px; }
     .mst-edge-form { flex-basis: 100%; }
     .network-select-label select { width: 112px; }
+    .network-target-menu summary { min-width: 120px; }
     .network-message-label input { width: 140px; }
     .mst-builder-actions { margin-left: auto; }
     .mst-stage { min-height: 300px; }

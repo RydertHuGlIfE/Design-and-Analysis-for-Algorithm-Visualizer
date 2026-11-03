@@ -27,16 +27,21 @@
                         <button class="topology-button" id="topology-mesh" type="button">Mesh</button>
                     </div>
                     <label class="network-select-label">Sender<select id="route-source"></select></label>
-                    <label class="network-select-label">Receiver<select id="route-target"></select></label>
+                    <details class="network-target-menu">
+                        <summary id="route-target-summary">Choose receivers</summary>
+                        <div id="route-target-options" class="network-target-options"></div>
+                    </details>
                     <label class="network-message-label">Message<input id="route-message" type="text" maxlength="48" value="Hello, network!" autocomplete="off"></label>
                     <div class="mst-builder-actions">
                         <button class="mst-text-button" id="network-clear" type="button">Clear</button>
+                        <button class="mst-text-button network-broadcast-button" id="network-broadcast" type="button">Send to all</button>
                         <button class="mst-solve-button" id="network-route" type="button">Send message</button>
                     </div>
                     <details class="network-custom-menu">
                         <summary>Customize</summary>
                         <div class="network-custom-controls">
                             <button class="mst-editor-button" id="network-add-pc" type="button">Place PC</button>
+                            <button class="mst-editor-button" id="network-connect-pcs" type="button" aria-pressed="false" title="Click two PCs to create a weighted link">Connect PCs</button>
                             <form id="network-link-form" class="mst-edge-form">
                                 <label>PC<select id="network-link-from" required><option value="">From</option></select></label>
                                 <label>PC<select id="network-link-to" required><option value="">To</option></select></label>
@@ -48,7 +53,7 @@
                     <span class="mst-editor-message" id="network-message" role="status">Choose a topology and send a message.</span>
                 </div>
                 <div class="mst-canvas-wrap">
-                    <svg id="network-stage" class="mst-stage" viewBox="0 0 900 600" role="img" aria-label="Computer network and animated message route"></svg>
+                    <svg id="network-stage" class="mst-stage" viewBox="0 0 900 600" role="img" aria-label="Computer network and animated message route"><g id="network-packets"></g></svg>
                     <div class="mst-canvas-label"><span id="network-count">6 PCS / 5 LINKS</span><span>PACKET ROUTING / LINK COST</span></div>
                 </div>
             </section>
@@ -1449,12 +1454,15 @@
         const networkNodeElements = new Map();
         const networkPositions = new Map();
         const networkNames = new Map();
+        const networkTargets = new Set();
         let networkGraph = { nodes: [], edges: [] };
         let networkRoute = null;
         let networkCursor = 0;
         let networkTimer = null;
         let networkDelay = 700;
         let networkPlaceMode = false;
+        let networkConnectMode = false;
+        let networkConnectFirst = null;
         let networkTopology = 'star';
 
         const topologyPresets = {
@@ -1503,16 +1511,47 @@
         }
 
         function updateNetworkSelectors() {
-            ['route-source', 'route-target', 'network-link-from', 'network-link-to'].forEach(id => {
+            ['route-source', 'network-link-from', 'network-link-to'].forEach(id => {
                 const select = document.getElementById(id);
                 const oldValue = select.value;
                 const placeholder = id === 'route-source' ? 'Choose sender' : id === 'route-target' ? 'Choose receiver' : 'Choose PC';
                 select.replaceChildren(new Option(placeholder, ''));
-                networkGraph.nodes.forEach(node => select.add(new Option(networkLabel(node), node)));
+                const endpoints = id === 'route-source' && networkTopology === 'star'
+                    ? networkGraph.nodes.filter(node => node !== 'R')
+                    : networkGraph.nodes;
+                endpoints.forEach(node => select.add(new Option(networkLabel(node), node)));
                 if (networkGraph.nodes.includes(oldValue)) select.value = oldValue;
             });
+            updateReceiverOptions();
             document.getElementById('network-pc-count').textContent = networkGraph.nodes.length;
             document.getElementById('network-count').textContent = `${networkGraph.nodes.length} PCS / ${networkGraph.edges.length} LINKS`;
+        }
+
+        function updateReceiverOptions() {
+            const options = document.getElementById('route-target-options');
+            const source = document.getElementById('route-source').value;
+            const eligible = networkTopology === 'star'
+                ? networkGraph.nodes.filter(node => node !== 'R' && node !== source)
+                : networkGraph.nodes.filter(node => node !== source);
+            for (const target of networkTargets) {
+                if (!eligible.includes(target)) networkTargets.delete(target);
+            }
+            options.replaceChildren();
+            eligible.forEach(node => {
+                const label = document.createElement('label');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = node;
+                checkbox.checked = networkTargets.has(node);
+                const text = document.createElement('span');
+                text.textContent = networkLabel(node);
+                label.append(checkbox, text);
+                options.appendChild(label);
+            });
+            const summary = document.getElementById('route-target-summary');
+            summary.textContent = networkTargets.size
+                ? `${networkTargets.size} receiver${networkTargets.size === 1 ? '' : 's'} selected`
+                : 'Choose receivers';
         }
 
         function drawNetwork() {
@@ -1567,18 +1606,9 @@
                 networkNodeElements.set(node, group);
             });
 
-            const packet = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            packet.setAttribute('id', 'network-packet');
-            packet.setAttribute('class', 'network-packet');
-            packet.style.display = 'none';
-            const packetBody = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            packetBody.setAttribute('r', '15'); packetBody.setAttribute('class', 'network-packet-body');
-            packet.appendChild(packetBody);
-            const packetMark = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            packetMark.setAttribute('y', '4'); packetMark.setAttribute('class', 'network-packet-mark');
-            packetMark.textContent = 'MSG';
-            packet.appendChild(packetMark);
-            networkStage.appendChild(packet);
+            const packetLayer = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            packetLayer.setAttribute('id', 'network-packets');
+            networkStage.appendChild(packetLayer);
             updateNetworkSelectors();
             updateNetworkRouteView();
         }
@@ -1621,6 +1651,14 @@
 
         function loadTopology(name) {
             networkTopology = name;
+            networkTargets.clear();
+            networkPlaceMode = false;
+            networkConnectMode = false;
+            networkConnectFirst = null;
+            document.getElementById('network-add-pc').classList.remove('is-active');
+            document.getElementById('network-connect-pcs').classList.remove('is-active');
+            document.getElementById('network-connect-pcs').setAttribute('aria-pressed', 'false');
+            networkStage.classList.remove('is-connecting');
             const preset = topologyPresets[name];
             networkGraph = { nodes: [...preset.nodes], edges: preset.edges.map(edge => ({ ...edge })) };
             networkNames.clear();
@@ -1633,55 +1671,58 @@
             setNetworkMessage(`${name === 'star' ? 'Star' : 'Mesh'} network loaded. Select two PCs and send a message.`);
         }
 
-        async function sendNetworkMessage() {
+        async function sendNetworkMessage(broadcast = false) {
             const source = document.getElementById('route-source').value;
-            const target = document.getElementById('route-target').value;
+            if (broadcast && source) {
+                networkGraph.nodes
+                    .filter(node => node !== source && !(networkTopology === 'star' && node === 'R'))
+                    .forEach(node => networkTargets.add(node));
+                updateReceiverOptions();
+            }
+            const targets = [...networkTargets];
             const message = document.getElementById('route-message').value.trim();
-            if (!source || !target) {
-                setNetworkMessage('Choose both a sender and a receiver.', true);
+            if (!source || !targets.length) {
+                setNetworkMessage('Choose a sender and at least one receiver.', true);
                 return;
             }
             if (!message) {
                 setNetworkMessage('Write a message before sending the packet.', true);
                 return;
             }
-            if (source === target) {
-                setNetworkMessage('Choose two different PCs to send a message.', true);
-                return;
-            }
             resetNetworkRoute();
             document.getElementById('mst-status').textContent = 'ROUTING';
-            setNetworkMessage(`Finding a route from ${networkLabel(source)} to ${networkLabel(target)}...`);
+            setNetworkMessage(`Finding shortest routes from ${networkLabel(source)} to ${targets.length} receiver${targets.length === 1 ? '' : 's'}...`);
             try {
-                const response = await fetch('/network/route', {
+                const response = await fetch('/network/routes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ ...networkGraph, source, target })
+                    body: JSON.stringify({ ...networkGraph, source, targets })
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error || 'Unable to find a route.');
                 networkRoute = data;
-                routeTimeline.max = data.pathEdges.length;
-                document.getElementById('route-cost').textContent = data.distance;
-                document.getElementById('route-cost-caption').textContent = `cost units · ${data.pathEdges.length} ${data.pathEdges.length === 1 ? 'hop' : 'hops'}`;
-                document.getElementById('route-hops').textContent = data.pathEdges.length;
+                const maxHops = Math.max(...data.routes.map(route => route.pathEdges.length));
+                routeTimeline.max = maxHops;
+                document.getElementById('route-cost').textContent = data.totalDistance;
+                document.getElementById('route-cost-caption').textContent = `total path cost · ${data.routes.length} deliveries`;
+                document.getElementById('route-hops').textContent = data.totalHops;
                 document.getElementById('route-visited').textContent = data.steps.filter(step => step.type === 'VISIT').length;
-                document.getElementById('route-sequence-count').textContent = `${data.pathEdges.length} HOPS`;
-                document.getElementById('route-description').textContent = `Dijkstra checked ${data.steps.filter(step => step.type === 'VISIT').length} PCs. The message follows the lowest total link cost.`;
-                document.getElementById('route-summary').textContent = `“${message}” · ${networkLabel(source)} → ${networkLabel(target)}`;
+                document.getElementById('route-sequence-count').textContent = `${data.routes.length} DESTINATIONS`;
+                document.getElementById('route-description').textContent = `One Dijkstra search checked ${data.steps.filter(step => step.type === 'VISIT').length} PCs and found a shortest path to each receiver.`;
+                document.getElementById('route-summary').textContent = `“${message}” · ${data.routes.length} destination${data.routes.length === 1 ? '' : 's'}`;
                 const list = document.getElementById('route-sequence');
                 list.replaceChildren();
-                data.path.forEach((node, index) => {
+                data.routes.forEach(route => {
                     const item = document.createElement('li');
                     const endpoint = document.createElement('span');
                     const cost = document.createElement('span');
-                    endpoint.textContent = `${index + 1}. ${networkLabel(node)}`;
-                    cost.textContent = index < data.pathEdges.length ? `${data.pathEdges[index].weight} cost` : 'DEST';
+                    endpoint.textContent = route.path.map(networkLabel).join(' → ');
+                    cost.textContent = `${route.distance} cost`;
                     item.append(endpoint, cost);
                     list.appendChild(item);
                 });
                 document.getElementById('mst-status').textContent = 'ROUTE FOUND';
-                setNetworkMessage(`Shortest path found. Press Play to deliver the packet hop by hop.`);
+                setNetworkMessage(`Shortest paths found for ${data.routes.length} PC${data.routes.length === 1 ? '' : 's'}. Press Play to deliver the message.`);
                 updateNetworkRouteView();
             } catch (error) {
                 document.getElementById('mst-status').textContent = 'NO ROUTE';
@@ -1693,33 +1734,57 @@
 
         function updateNetworkRouteView() {
             networkEdgeElements.forEach((line, key) => {
-                const routeIndex = networkRoute?.pathEdges.findIndex(edge => `${edge.u}-${edge.v}` === key || `${edge.v}-${edge.u}` === key) ?? -1;
-                line.setAttribute('class', `network-link${routeIndex >= 0 ? ' is-route' : ''}${routeIndex === networkCursor && networkCursor < (networkRoute?.pathEdges.length || 0) ? ' is-next' : ''}`);
+                const routeEdges = networkRoute?.routes.flatMap(route => route.pathEdges.map((edge, index) => ({ edge, index }))) || [];
+                const matches = routeEdges.filter(({ edge }) => `${edge.u}-${edge.v}` === key || `${edge.v}-${edge.u}` === key);
+                const nextHop = matches.some(({ index }) => index === networkCursor && networkCursor < networkHopLimit());
+                line.setAttribute('class', `network-link${matches.length ? ' is-route' : ''}${nextHop ? ' is-next' : ''}`);
             });
-            const packet = document.getElementById('network-packet');
-            if (!packet || !networkRoute) return;
-            const node = networkRoute.path[Math.min(networkCursor, networkRoute.path.length - 1)];
-            const position = networkPositions.get(node);
-            packet.style.display = 'block';
-            packet.setAttribute('transform', `translate(${position.x} ${position.y - 42})`);
+            const packetLayer = document.getElementById('network-packets');
+            if (!packetLayer) return;
+            packetLayer.replaceChildren();
+            if (!networkRoute) return;
+
+            networkRoute.routes.forEach((route, routeIndex) => {
+                const hop = Math.min(networkCursor, route.pathEdges.length);
+                const node = route.path[hop];
+                const position = networkPositions.get(node);
+                const offset = (routeIndex - (networkRoute.routes.length - 1) / 2) * 9;
+                const packet = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                packet.setAttribute('class', `network-packet${hop === route.pathEdges.length ? ' is-delivered' : ''}`);
+                packet.setAttribute('transform', `translate(${position.x + offset} ${position.y - 42})`);
+                const body = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                body.setAttribute('r', '14'); body.setAttribute('class', 'network-packet-body');
+                packet.appendChild(body);
+                const mark = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                mark.setAttribute('y', '4'); mark.setAttribute('class', 'network-packet-mark');
+                mark.textContent = route.target;
+                packet.appendChild(mark);
+                packetLayer.appendChild(packet);
+            });
             networkNodeElements.forEach((group, label) => group.classList.toggle('is-sender', label === networkRoute.source));
 
-            const finished = networkCursor >= networkRoute.pathEdges.length;
-            document.getElementById('mst-step-label').textContent = `HOP ${networkCursor} / ${networkRoute.pathEdges.length}`;
-            document.getElementById('route-timeline-caption').textContent = finished ? 'Message delivered successfully' : networkCursor ? `Packet at ${networkLabel(node)} · next hop ${networkLabel(networkRoute.path[networkCursor + 1])}` : `Ready to send · ${networkLabel(networkRoute.source)} → ${networkLabel(networkRoute.target)}`;
+            const hopLimit = networkHopLimit();
+            const delivered = networkRoute.routes.filter(route => networkCursor >= route.pathEdges.length).length;
+            const finished = delivered === networkRoute.routes.length;
+            document.getElementById('mst-step-label').textContent = `DELIVERED ${delivered} / ${networkRoute.routes.length} · HOP ${networkCursor} / ${hopLimit}`;
+            document.getElementById('route-timeline-caption').textContent = finished ? 'All messages delivered successfully' : networkCursor ? `${delivered} delivered · ${networkRoute.routes.length - delivered} packets still traveling` : `Ready to send · ${networkRoute.routes.length} destination${networkRoute.routes.length === 1 ? '' : 's'}`;
             document.getElementById('route-time-current').textContent = `00:${String(Math.floor(networkCursor * networkDelay / 1000)).padStart(2, '0')}`;
-            document.getElementById('route-time-total').textContent = `00:${String(Math.floor(networkRoute.pathEdges.length * networkDelay / 1000)).padStart(2, '0')}`;
+            document.getElementById('route-time-total').textContent = `00:${String(Math.floor(hopLimit * networkDelay / 1000)).padStart(2, '0')}`;
             document.getElementById('route-back').disabled = networkCursor === 0;
             document.getElementById('route-forward').disabled = finished;
             document.getElementById('route-event-type').textContent = finished ? 'DELIVERED' : networkCursor ? `HOP ${networkCursor}` : 'READY';
-            document.getElementById('route-event-title').textContent = finished ? 'Message delivered' : networkCursor ? `Packet reached ${networkLabel(node)}` : 'Ready to transmit';
-            document.getElementById('route-event-detail').textContent = finished ? `The message reached ${networkLabel(networkRoute.target)} with total route cost ${networkRoute.distance}.` : `The packet is traveling from ${networkLabel(networkRoute.source)} to ${networkLabel(networkRoute.target)}.`;
+            document.getElementById('route-event-title').textContent = finished ? 'Broadcast complete' : networkCursor ? `${delivered} of ${networkRoute.routes.length} PCs reached` : 'Ready to transmit';
+            document.getElementById('route-event-detail').textContent = finished ? `All ${networkRoute.routes.length} selected PCs received the message. Total path cost: ${networkRoute.totalDistance}.` : `Packets are traveling from ${networkLabel(networkRoute.source)} along their shortest paths.`;
             if (finished) {
                 document.getElementById('mst-status').textContent = 'DELIVERED';
                 const message = document.getElementById('route-message').value.trim();
-                document.getElementById('route-summary').textContent = `“${message}” delivered · cost ${networkRoute.distance}.`;
+                document.getElementById('route-summary').textContent = `“${message}” delivered to ${networkRoute.routes.length} PCs · total cost ${networkRoute.totalDistance}.`;
             }
             routeTimeline.value = networkCursor;
+        }
+
+        function networkHopLimit() {
+            return networkRoute ? Math.max(...networkRoute.routes.map(route => route.pathEdges.length)) : 0;
         }
 
         function pauseNetworkRoute() {
@@ -1730,27 +1795,35 @@
         }
 
         function advanceNetworkPacket() {
-            if (!networkRoute || networkCursor >= networkRoute.pathEdges.length) {
+            if (!networkRoute || networkCursor >= networkHopLimit()) {
                 pauseNetworkRoute();
                 updateNetworkRouteView();
                 return;
             }
             networkCursor++;
             updateNetworkRouteView();
-            if (networkCursor < networkRoute.pathEdges.length) networkTimer = setTimeout(advanceNetworkPacket, networkDelay);
+            if (networkCursor < networkHopLimit()) networkTimer = setTimeout(advanceNetworkPacket, networkDelay);
             else pauseNetworkRoute();
         }
 
         function seekNetworkPacket(value) {
             pauseNetworkRoute();
             if (!networkRoute) return;
-            networkCursor = Math.max(0, Math.min(networkRoute.pathEdges.length, Number(value)));
+            networkCursor = Math.max(0, Math.min(networkHopLimit(), Number(value)));
             updateNetworkRouteView();
         }
 
         document.getElementById('topology-star').addEventListener('click', () => loadTopology('star'));
         document.getElementById('topology-mesh').addEventListener('click', () => loadTopology('mesh'));
         document.getElementById('network-route').addEventListener('click', sendNetworkMessage);
+        document.getElementById('network-broadcast').addEventListener('click', () => sendNetworkMessage(true));
+        document.getElementById('route-source').addEventListener('change', updateReceiverOptions);
+        document.getElementById('route-target-options').addEventListener('change', event => {
+            if (event.target.type !== 'checkbox') return;
+            if (event.target.checked) networkTargets.add(event.target.value);
+            else networkTargets.delete(event.target.value);
+            updateReceiverOptions();
+        });
         document.getElementById('route-play').addEventListener('click', () => {
             if (!networkRoute) {
                 setNetworkMessage('Send a message first to calculate its route.', true);
@@ -1760,7 +1833,7 @@
                 pauseNetworkRoute();
                 return;
             }
-            if (networkCursor >= networkRoute.pathEdges.length) networkCursor = 0;
+            if (networkCursor >= networkHopLimit()) networkCursor = 0;
             routePlayButton.textContent = 'Pause';
             routePlayButton.setAttribute('aria-label', 'Pause packet route');
             advanceNetworkPacket();
@@ -1780,11 +1853,80 @@
         });
         document.getElementById('network-add-pc').addEventListener('click', event => {
             networkPlaceMode = !networkPlaceMode;
+            networkConnectMode = false;
+            networkConnectFirst = null;
+            document.getElementById('network-connect-pcs').classList.remove('is-active');
+            document.getElementById('network-connect-pcs').setAttribute('aria-pressed', 'false');
+            networkStage.classList.remove('is-connecting');
             event.currentTarget.classList.toggle('is-active', networkPlaceMode);
             setNetworkMessage(networkPlaceMode ? 'Click the canvas to place a PC.' : 'PC placement cancelled.');
         });
+        document.getElementById('network-connect-pcs').addEventListener('click', event => {
+            networkConnectMode = !networkConnectMode;
+            networkConnectFirst = null;
+            networkPlaceMode = false;
+            document.getElementById('network-add-pc').classList.remove('is-active');
+            event.currentTarget.classList.toggle('is-active', networkConnectMode);
+            event.currentTarget.setAttribute('aria-pressed', String(networkConnectMode));
+            networkStage.classList.toggle('is-connecting', networkConnectMode);
+            setNetworkMessage(networkConnectMode ? 'Click two PCs to connect them using the Cost value.' : 'Connect mode cancelled.');
+        });
         networkStage.addEventListener('click', event => {
-            if (event.target.closest('[data-node]') || !networkPlaceMode) return;
+            const clickedNode = event.target.closest('[data-node]')?.getAttribute('data-node');
+            if (clickedNode) {
+                if (networkConnectMode) {
+                    if (!networkConnectFirst) {
+                        networkConnectFirst = clickedNode;
+                        setNetworkMessage(`${networkLabel(clickedNode)} selected. Click the second PC to create a link.`);
+                        return;
+                    }
+                    if (networkConnectFirst === clickedNode) {
+                        setNetworkMessage('Choose a different PC for the other end of the link.', true);
+                        return;
+                    }
+                    const first = networkConnectFirst;
+                    const second = clickedNode;
+                    const weight = Number(document.getElementById('network-link-cost').value);
+                    if (!Number.isInteger(weight) || weight < 1) {
+                        setNetworkMessage('Set the Cost field to a positive whole number first.', true);
+                        networkConnectFirst = null;
+                        return;
+                    }
+                    if (networkGraph.edges.some(edge => (edge.u === first && edge.v === second) || (edge.u === second && edge.v === first))) {
+                        setNetworkMessage(`${networkLabel(first)} and ${networkLabel(second)} already have a link.`, true);
+                        networkConnectFirst = null;
+                        return;
+                    }
+                    networkGraph.edges.push({ u: first, v: second, weight });
+                    networkConnectFirst = null;
+                    resetNetworkRoute();
+                    document.getElementById('network-connect-pcs').classList.remove('is-active');
+                    document.getElementById('network-connect-pcs').setAttribute('aria-pressed', 'false');
+                    networkConnectMode = false;
+                    networkStage.classList.remove('is-connecting');
+                    setNetworkMessage(`Link created: ${networkLabel(first)} ↔ ${networkLabel(second)} · cost ${weight}.`);
+                    return;
+                }
+                if (networkPlaceMode) {
+                    networkPlaceMode = false;
+                    document.getElementById('network-add-pc').classList.remove('is-active');
+                }
+                const source = document.getElementById('route-source');
+                if (!source.value) {
+                    source.value = clickedNode;
+                    updateReceiverOptions();
+                    setNetworkMessage(`Sender set to ${networkLabel(clickedNode)}. Choose one or more receivers.`);
+                } else if (source.value === clickedNode) {
+                    setNetworkMessage('That PC is the sender. Choose another PC as a receiver.', true);
+                } else {
+                    if (networkTargets.has(clickedNode)) networkTargets.delete(clickedNode);
+                    else networkTargets.add(clickedNode);
+                    updateReceiverOptions();
+                    setNetworkMessage(`${networkTargets.size} receiver${networkTargets.size === 1 ? '' : 's'} selected.`);
+                }
+                return;
+            }
+            if (!networkPlaceMode) return;
             if (networkGraph.nodes.length >= 26) {
                 setNetworkMessage('The network has reached the 26-PC limit.', true);
                 return;
@@ -1823,8 +1965,16 @@
         document.getElementById('network-clear').addEventListener('click', () => {
             networkTopology = 'custom';
             networkGraph = { nodes: [], edges: [] };
+            networkTargets.clear();
             networkNames.clear();
             networkPositions.clear();
+            networkPlaceMode = false;
+            networkConnectMode = false;
+            networkConnectFirst = null;
+            document.getElementById('network-add-pc').classList.remove('is-active');
+            document.getElementById('network-connect-pcs').classList.remove('is-active');
+            document.getElementById('network-connect-pcs').setAttribute('aria-pressed', 'false');
+            networkStage.classList.remove('is-connecting');
             document.getElementById('network-topology-title').textContent = 'Custom network';
             document.getElementById('topology-star').classList.remove('is-active');
             document.getElementById('topology-mesh').classList.remove('is-active');
@@ -1834,7 +1984,8 @@
 
         loadTopology('star');
         document.getElementById('route-source').value = 'A';
-        document.getElementById('route-target').value = 'E';
+        networkTargets.add('E');
+        updateReceiverOptions();
     </script>
 </body>
 </html>
