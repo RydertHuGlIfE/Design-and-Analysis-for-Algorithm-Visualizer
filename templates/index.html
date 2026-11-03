@@ -3,11 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DAA Visualizer | Digital Astral</title>
+    <title>Edge Theory | Minimum Spanning Tree</title>
 </head>
-<body>
+<body class="mst-only">
+    <main class="mst-studio">
+        <header class="mst-topbar">
+            <a class="mst-brand" href="/" aria-label="Edge Theory home"><span class="mst-brand-mark">E</span><span>EDGE THEORY<small>ALGORITHM STUDY / 01</small></span></a>
+            <div class="mst-project-title"><span>GRAPH OPTIMIZATION</span><h1>Minimum spanning tree</h1></div>
+            <div class="mst-topbar-meta"><span class="mst-method">KRUSKAL <i></i> UNION-FIND</span><span class="mst-status" id="mst-status">LOADING</span></div>
+        </header>
+
+        <section class="mst-workspace">
+            <section class="mst-graph-panel" aria-label="Minimum spanning tree graph">
+                <div class="mst-panel-heading">
+                    <div><span class="mst-kicker">NETWORK / 01</span><h2>Weighted graph</h2></div>
+                    <div class="mst-legend"><span><i class="legend-pending"></i>Pending</span><span><i class="legend-current"></i>Current</span><span><i class="legend-selected"></i>Selected</span><span><i class="legend-rejected"></i>Cycle</span></div>
+                </div>
+                <div class="mst-canvas-wrap">
+                    <svg id="mst-stage" class="mst-stage" viewBox="0 0 900 600" role="img" aria-label="Weighted graph showing Kruskal's algorithm progress"></svg>
+                    <div class="mst-canvas-label"><span id="mst-network-count">Loading network</span><span>UNDIRECTED / WEIGHTED</span></div>
+                </div>
+            </section>
+
+            <aside class="mst-inspector">
+                <section class="mst-total-block">
+                    <span class="mst-kicker">CURRENT TREE WEIGHT</span>
+                    <strong id="mst-total">--</strong>
+                    <span id="mst-total-caption">No edges selected</span>
+                </section>
+                <section class="mst-metrics" aria-label="Graph statistics">
+                    <div><span>Vertices</span><strong id="mst-vertices">--</strong></div>
+                    <div><span>Edges tested</span><strong id="mst-tested">0</strong></div>
+                    <div><span>Components</span><strong id="mst-components">--</strong></div>
+                </section>
+                <section class="mst-inspector-section">
+                    <div class="mst-section-heading"><span>Selected edges</span><span id="mst-edge-count">0 / 0</span></div>
+                    <ol id="mst-selected-edges" class="mst-selected-edges"><li class="mst-empty">Waiting for trace</li></ol>
+                </section>
+                <section class="mst-operation-section" aria-live="polite">
+                    <div class="mst-section-heading"><span>Operation</span><span id="mst-operation-type">READY</span></div>
+                    <strong id="mst-operation-title">Ready to build the tree</strong>
+                    <p id="mst-operation-detail">Play the trace or drag the timeline to inspect each Kruskal operation.</p>
+                </section>
+            </aside>
+        </section>
+
+        <footer class="mst-player">
+            <div class="mst-player-top">
+                <div class="mst-player-label"><span class="mst-live-dot"></span><span>TRACE CONTROL</span><strong id="mst-step-label">STEP 0 / 0</strong></div>
+                <div class="mst-player-actions">
+                    <button class="mst-control-button" id="mst-reset" type="button" aria-label="Restart trace" title="Restart trace">Restart</button>
+                    <button class="mst-control-button" id="mst-back" type="button" aria-label="Previous operation" title="Previous operation">Back</button>
+                    <button class="mst-play-button" id="mst-play" type="button" aria-label="Play trace">Play</button>
+                    <button class="mst-control-button" id="mst-forward" type="button" aria-label="Next operation" title="Next operation">Next</button>
+                </div>
+                <label class="mst-speed-control" for="mst-speed"><span>PACE</span><input id="mst-speed" type="range" min="150" max="1200" step="50" value="600"><output id="mst-speed-label" for="mst-speed">1.0x</output></label>
+            </div>
+            <div class="mst-timeline-row"><span id="mst-time-current">00:00</span><input id="mst-timeline" type="range" min="0" max="0" value="0" aria-label="Trace timeline"><span id="mst-time-total">00:00</span></div>
+            <div class="mst-timeline-caption"><span id="mst-timeline-caption">Kruskal's algorithm trace</span><span>O(E log E) TIME <b>·</b> O(V) SPACE</span></div>
+        </footer>
+    </main>
+
     <div class="cockpit">
         <!-- Sidebar -->
         <aside class="sidebar">
@@ -930,6 +988,225 @@
             statusElement.innerText = "PLOTTED";
             stepDesc.innerText = `Plotted ${algoName} across ${sizes.length} input sizes. Compare the actual curve against ${theoLabel}.`;
         }
+    </script>
+    <script>
+        const mstStage = document.getElementById('mst-stage');
+        const mstTimeline = document.getElementById('mst-timeline');
+        const mstPlayButton = document.getElementById('mst-play');
+        const mstSteps = [];
+        const mstEdgeElements = new Map();
+        const mstNodeElements = new Map();
+        let mstCursor = 0;
+        let mstDelay = 600;
+        let mstTimer = null;
+
+        const mstEdgeKey = (first, second) => `${first}-${second}`;
+        const formatTraceTime = (seconds) => `00:${String(Math.floor(seconds)).padStart(2, '0')}`;
+
+        function drawMstGraph(graph) {
+            const points = {};
+            const centerX = 450, centerY = 292, radius = 218;
+            graph.nodes.forEach((node, index) => {
+                const angle = -Math.PI / 2 + (2 * Math.PI * index) / graph.nodes.length;
+                points[node] = { x: centerX + radius * Math.cos(angle), y: centerY + radius * Math.sin(angle) };
+            });
+
+            graph.edges.forEach(edge => {
+                const first = points[edge.u], second = points[edge.v];
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                const key = mstEdgeKey(edge.u, edge.v);
+                line.setAttribute('x1', first.x); line.setAttribute('y1', first.y);
+                line.setAttribute('x2', second.x); line.setAttribute('y2', second.y);
+                line.setAttribute('class', 'mst-edge');
+                mstStage.appendChild(line);
+                mstEdgeElements.set(key, line);
+
+                const weight = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                weight.setAttribute('x', (first.x + second.x) / 2);
+                weight.setAttribute('y', (first.y + second.y) / 2 - 8);
+                weight.setAttribute('class', 'mst-weight-label');
+                weight.textContent = edge.weight;
+                mstStage.appendChild(weight);
+            });
+
+            graph.nodes.forEach(node => {
+                const point = points[node];
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', point.x); circle.setAttribute('cy', point.y);
+                circle.setAttribute('r', '24'); circle.setAttribute('class', 'mst-node');
+                mstStage.appendChild(circle);
+                mstNodeElements.set(node, circle);
+
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', point.x); label.setAttribute('y', point.y);
+                label.setAttribute('class', 'mst-node-label');
+                label.textContent = node;
+                mstStage.appendChild(label);
+            });
+
+            document.getElementById('mst-vertices').textContent = graph.nodes.length;
+            document.getElementById('mst-components').textContent = graph.nodes.length;
+            document.getElementById('mst-network-count').textContent = `${graph.nodes.length} VERTICES / ${graph.edges.length} EDGES`;
+            document.getElementById('mst-edge-count').textContent = `0 / ${graph.nodes.length - 1}`;
+        }
+
+        function describeMstOperation(step) {
+            if (!step) return ['Ready to build the tree', 'Play the trace or drag the timeline to inspect each Kruskal operation.'];
+            if (step.type === 'CONSIDER') return [`Consider ${step.u} - ${step.v}`, `Test this edge at weight ${step.weight}, in ascending order.`];
+            if (step.type === 'FIND') return [`Find(${step.node})`, `The current component representative is ${step.root}.`];
+            if (step.type === 'ACCEPT') return [`Keep ${step.u} - ${step.v}`, `Weight ${step.weight}; this edge connects two different components.`];
+            if (step.type === 'UNION') return ['Union components', `Merge the sets represented by ${step.firstRoot} and ${step.secondRoot}.`];
+            if (step.type === 'REJECT') return [`Skip ${step.u} - ${step.v}`, `Weight ${step.weight}; both vertices already share a component, so this would create a cycle.`];
+            return ['Minimum tree complete', `All vertices are connected with total weight ${step.weight}.`];
+        }
+
+        function renderMstCursor() {
+            const selected = [];
+            const rejected = new Set();
+            const candidates = new Set();
+            let tested = 0;
+            for (const step of mstSteps.slice(0, mstCursor)) {
+                if (step.type === 'CONSIDER') candidates.add(mstEdgeKey(step.u, step.v));
+                if (step.type === 'ACCEPT') {
+                    selected.push(step);
+                    candidates.delete(mstEdgeKey(step.u, step.v));
+                    tested++;
+                }
+                if (step.type === 'REJECT') {
+                    rejected.add(mstEdgeKey(step.u, step.v));
+                    candidates.delete(mstEdgeKey(step.u, step.v));
+                    tested++;
+                }
+            }
+
+            const current = mstCursor ? mstSteps[mstCursor - 1] : null;
+            const activeNodes = new Set();
+            if (current?.type === 'FIND') activeNodes.add(current.node);
+            if (current?.u && current?.v) {
+                activeNodes.add(current.u);
+                activeNodes.add(current.v);
+            }
+            mstEdgeElements.forEach((line, key) => {
+                line.setAttribute('class', `mst-edge${selected.some(edge => mstEdgeKey(edge.u, edge.v) === key) ? ' is-selected' : rejected.has(key) ? ' is-rejected' : candidates.has(key) ? ' is-current' : ''}`);
+            });
+            mstNodeElements.forEach((circle, node) => circle.setAttribute('class', `mst-node${activeNodes.has(node) ? ' is-active' : ''}`));
+
+            const totalWeight = selected.reduce((sum, edge) => sum + edge.weight, 0);
+            document.getElementById('mst-total').textContent = totalWeight;
+            document.getElementById('mst-total-caption').textContent = selected.length ? `${selected.length} edges in the tree` : 'No edges selected';
+            document.getElementById('mst-tested').textContent = tested;
+            document.getElementById('mst-components').textContent = mstNodeElements.size - selected.length;
+            document.getElementById('mst-edge-count').textContent = `${selected.length} / ${mstNodeElements.size - 1}`;
+
+            const selectedList = document.getElementById('mst-selected-edges');
+            selectedList.replaceChildren();
+            if (!selected.length) {
+                const empty = document.createElement('li');
+                empty.className = 'mst-empty';
+                empty.textContent = 'No edges selected yet';
+                selectedList.appendChild(empty);
+            } else {
+                selected.forEach(edge => {
+                    const item = document.createElement('li');
+                    const endpoints = document.createElement('span');
+                    const weight = document.createElement('span');
+                    endpoints.textContent = `${edge.u} - ${edge.v}`;
+                    weight.textContent = edge.weight;
+                    item.append(endpoints, weight);
+                    selectedList.appendChild(item);
+                });
+            }
+
+            const [title, detail] = describeMstOperation(current);
+            document.getElementById('mst-operation-title').textContent = title;
+            document.getElementById('mst-operation-detail').textContent = detail;
+            document.getElementById('mst-operation-type').textContent = current?.type || 'READY';
+            document.getElementById('mst-step-label').textContent = `STEP ${mstCursor} / ${mstSteps.length}`;
+            document.getElementById('mst-timeline-caption').textContent = current ? `${current.type} · ${title}` : "Kruskal's algorithm trace";
+            mstTimeline.value = mstCursor;
+            document.getElementById('mst-time-current').textContent = formatTraceTime(mstCursor * mstDelay / 1000);
+            document.getElementById('mst-time-total').textContent = formatTraceTime(mstSteps.length * mstDelay / 1000);
+            document.getElementById('mst-back').disabled = mstCursor === 0;
+            document.getElementById('mst-forward').disabled = mstCursor === mstSteps.length;
+
+            if (current?.type === 'DONE') setMstStatus('COMPLETE');
+        }
+
+        function setMstStatus(status) {
+            document.getElementById('mst-status').textContent = status;
+        }
+
+        function pauseMst(status = 'PAUSED') {
+            clearTimeout(mstTimer);
+            mstTimer = null;
+            mstPlayButton.textContent = 'Play';
+            mstPlayButton.setAttribute('aria-label', 'Play trace');
+            if (mstCursor < mstSteps.length) setMstStatus(status);
+        }
+
+        function advanceMst() {
+            if (mstCursor >= mstSteps.length) {
+                pauseMst('COMPLETE');
+                return;
+            }
+            mstCursor++;
+            renderMstCursor();
+            if (mstCursor < mstSteps.length) mstTimer = setTimeout(advanceMst, mstDelay);
+            else pauseMst('COMPLETE');
+        }
+
+        function toggleMstPlayback() {
+            if (mstTimer) {
+                pauseMst();
+                return;
+            }
+            if (mstCursor >= mstSteps.length) mstCursor = 0;
+            mstPlayButton.textContent = 'Pause';
+            mstPlayButton.setAttribute('aria-label', 'Pause trace');
+            setMstStatus('PLAYING');
+            advanceMst();
+        }
+
+        function setMstCursor(value) {
+            pauseMst();
+            mstCursor = Math.max(0, Math.min(mstSteps.length, Number(value)));
+            renderMstCursor();
+            if (mstCursor === mstSteps.length) setMstStatus('COMPLETE');
+            else if (mstCursor === 0) setMstStatus('READY');
+        }
+
+        document.getElementById('mst-play').addEventListener('click', toggleMstPlayback);
+        document.getElementById('mst-back').addEventListener('click', () => setMstCursor(mstCursor - 1));
+        document.getElementById('mst-forward').addEventListener('click', () => setMstCursor(mstCursor + 1));
+        document.getElementById('mst-reset').addEventListener('click', () => setMstCursor(0));
+        mstTimeline.addEventListener('input', event => setMstCursor(event.target.value));
+        document.getElementById('mst-speed').addEventListener('input', event => {
+            mstDelay = Number(event.target.value);
+            document.getElementById('mst-speed-label').textContent = `${(600 / mstDelay).toFixed(1)}x`;
+            renderMstCursor();
+            if (mstTimer) {
+                clearTimeout(mstTimer);
+                mstTimer = setTimeout(advanceMst, mstDelay);
+            }
+        });
+
+        fetch('/mst')
+            .then(response => {
+                if (!response.ok) throw new Error('Unable to load MST trace');
+                return response.json();
+            })
+            .then(data => {
+                mstSteps.push(...data.steps);
+                drawMstGraph(data.graph);
+                mstTimeline.max = mstSteps.length;
+                renderMstCursor();
+                setMstStatus('READY');
+            })
+            .catch(error => {
+                setMstStatus('ERROR');
+                document.getElementById('mst-operation-title').textContent = 'Trace unavailable';
+                document.getElementById('mst-operation-detail').textContent = error.message;
+            });
     </script>
 </body>
 </html>
