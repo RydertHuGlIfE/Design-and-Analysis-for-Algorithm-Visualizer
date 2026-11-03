@@ -49,6 +49,13 @@
                 </nav>
 
                 <nav class="nav-section" style="margin-top: 2rem;">
+                    <h3><span>•</span> Graphs</h3>
+                    <div class="nav-buttons">
+                        <button class="nav-btn" data-algo="Minimum Spanning Tree" onclick="startMST()">Minimum Spanning Tree</button>
+                    </div>
+                </nav>
+
+                <nav class="nav-section" style="margin-top: 2rem;">
                     <h3><span>🧠</span> Learn Mode</h3>
                     <div class="nav-buttons">
                         <button class="nav-btn learn-btn" onclick="startLearnMode('/bubblesort','Bubble Sort')">🎓 Bubble Sort</button>
@@ -89,6 +96,10 @@
                 <div id="bar-container" class="bar-container" style="display: none;"></div>
                 <div id="tree-container" class="tree-container" style="display: none; width: 100%; height: 100%;">
                     <svg id="tree-svg" width="100%" height="100%"></svg>
+                </div>
+                <div id="mst-container" style="display: none; width: 100%; height: 100%; flex-direction: column;">
+                    <svg id="mst-svg" width="100%" height="100%" viewBox="0 0 800 480" role="img" aria-label="Weighted graph and minimum spanning tree"></svg>
+                    <div id="mst-summary" class="ref-data-panel" style="text-align: center;">Select Minimum Spanning Tree to begin.</div>
                 </div>
                 <div id="knapsack-container" class="knapsack-container" style="display: none; width: 100%; height: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
                     <div id="kp-data" class="ref-data-panel" style="width: 100%; max-height: 150px; overflow-y: auto;"></div>
@@ -190,7 +201,8 @@
             'BST': { complexity: 'log n', space: 'h', pseudo: ["insert(root, key):", "  if root is null: return Node(key)", "  if key < root.key: root.left = insert(root.left, key)", "  else: root.right = insert(root.right, key)", "  return root"] },
             'Knapsack': { complexity: 'nW', space: 'nW', pseudo: ["for i from 1 to n:", "  for w from 1 to W:", "    if w[i] <= w:", "      dp[i][w] = max(v[i] + dp[i-1][w-w[i]], dp[i-1][w])", "    else: dp[i][w] = dp[i-1][w]"] },
             'Matrix Chain': { complexity: 'n³', space: 'n²', pseudo: ["for L from 2 to n:", "  for i from 1 to n-L+1:", "    j = i + L - 1", "    for k from i to j-1:", "      q = m[i][k] + m[k+1][j] + p[i-1]p[k]p[j]"] },
-            'Huffman': { complexity: 'n log n', space: 'n', pseudo: ["while Q.size > 1:", "  l = Q.pop()", "  r = Q.pop()", "  node = merge(l, r)", "  Q.push(node)"] }
+            'Huffman': { complexity: 'n log n', space: 'n', pseudo: ["while Q.size > 1:", "  l = Q.pop()", "  r = Q.pop()", "  node = merge(l, r)", "  Q.push(node)"] },
+            'Minimum Spanning Tree': { complexity: 'E log E', space: 'V', pseudo: ["sort edges by weight", "for each edge (u, v):", "  ru = find(u); rv = find(v)", "  if ru != rv:", "    accept edge; union(ru, rv)", "return selected edges and total weight"] }
         };
 
         const statusElement = document.getElementById('status-info');
@@ -233,7 +245,7 @@
         }
 
         function setView(active) {
-            const containers = ['bar-container', 'tree-container', 'knapsack-container', 'mcm-container', 'huffman-container', 'learn-container', 'race-container', 'graph-container'];
+            const containers = ['bar-container', 'tree-container', 'mst-container', 'knapsack-container', 'mcm-container', 'huffman-container', 'learn-container', 'race-container', 'graph-container'];
             containers.forEach(c => {
                 const el = document.getElementById(c);
                 if (!el) return;
@@ -546,6 +558,98 @@
                 } else if (parts[0] === 'DONE') {
                     statusElement.innerText = "SUCCESS";
                 }
+            }
+        }
+
+        async function startMST() {
+            setView('mst');
+            updateMetadata('Minimum Spanning Tree');
+            statusElement.innerText = 'RUNNING';
+            const svg = document.getElementById('mst-svg');
+            const summary = document.getElementById('mst-summary');
+            svg.innerHTML = '';
+            summary.textContent = 'Preparing weighted graph...';
+
+            const response = await fetch('/mst');
+            const data = await response.json();
+            const positions = {};
+            const centerX = 400, centerY = 240, radius = 175;
+            data.graph.nodes.forEach((node, index) => {
+                const angle = -Math.PI / 2 + (2 * Math.PI * index) / data.graph.nodes.length;
+                positions[node] = { x: centerX + radius * Math.cos(angle), y: centerY + radius * Math.sin(angle) };
+            });
+
+            const edgeElements = {};
+            data.graph.edges.forEach(edge => {
+                const first = positions[edge.u], second = positions[edge.v];
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                const edgeId = `${edge.u}-${edge.v}`;
+                line.setAttribute('x1', first.x); line.setAttribute('y1', first.y);
+                line.setAttribute('x2', second.x); line.setAttribute('y2', second.y);
+                line.setAttribute('stroke', 'var(--outline)'); line.setAttribute('stroke-width', '3');
+                line.style.transition = 'stroke 180ms ease, stroke-width 180ms ease';
+                svg.appendChild(line);
+                edgeElements[edgeId] = line;
+
+                const weight = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                weight.setAttribute('x', (first.x + second.x) / 2);
+                weight.setAttribute('y', (first.y + second.y) / 2 - 8);
+                weight.setAttribute('text-anchor', 'middle');
+                weight.setAttribute('fill', 'var(--text-muted)');
+                weight.style.fontFamily = "'Space Mono', monospace";
+                weight.style.fontSize = '13px';
+                weight.textContent = edge.weight;
+                svg.appendChild(weight);
+            });
+
+            data.graph.nodes.forEach(node => {
+                const point = positions[node];
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', point.x); circle.setAttribute('cy', point.y);
+                circle.setAttribute('r', '22'); circle.setAttribute('fill', 'var(--primary)');
+                circle.setAttribute('stroke', 'var(--outline)'); circle.setAttribute('stroke-width', '2');
+                svg.appendChild(circle);
+                const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                label.setAttribute('x', point.x); label.setAttribute('y', point.y + 5);
+                label.setAttribute('text-anchor', 'middle'); label.setAttribute('fill', '#fff');
+                label.style.fontFamily = "'Space Mono', monospace";
+                label.style.fontWeight = '700'; label.textContent = node;
+                svg.appendChild(label);
+            });
+
+            let selectedCount = 0;
+            for (const step of data.steps) {
+                const edgeId = step.u && step.v ? `${step.u}-${step.v}` : null;
+                if (step.type === 'CONSIDER') {
+                    edgeElements[edgeId].setAttribute('stroke', '#f4b942');
+                    edgeElements[edgeId].setAttribute('stroke-width', '5');
+                    stepDesc.textContent = `Considering edge ${step.u}-${step.v} with weight ${step.weight}.`;
+                    highlightPseudo(1);
+                } else if (step.type === 'FIND') {
+                    stepDesc.textContent = `Find(${step.node}) resolves to component representative ${step.root}.`;
+                    highlightPseudo(2);
+                } else if (step.type === 'ACCEPT') {
+                    edgeElements[edgeId].setAttribute('stroke', '#58c98d');
+                    edgeElements[edgeId].setAttribute('stroke-width', '5');
+                    selectedCount++;
+                    summary.textContent = `${selectedCount} of ${data.graph.nodes.length - 1} MST edges selected`;
+                    stepDesc.textContent = `Accept ${step.u}-${step.v}; it joins two different components.`;
+                    highlightPseudo(3);
+                } else if (step.type === 'UNION') {
+                    stepDesc.textContent = `Union components rooted at ${step.firstRoot} and ${step.secondRoot}.`;
+                    highlightPseudo(4);
+                } else if (step.type === 'REJECT') {
+                    edgeElements[edgeId].setAttribute('stroke', '#e87979');
+                    edgeElements[edgeId].setAttribute('stroke-width', '3');
+                    stepDesc.textContent = `Reject ${step.u}-${step.v}; adding it would create a cycle.`;
+                } else if (step.type === 'DONE') {
+                    summary.textContent = `Minimum spanning tree weight: ${step.weight} | ${step.edgeCount} edges`;
+                    stepDesc.textContent = `Complete: the minimum spanning tree has total weight ${step.weight}.`;
+                    highlightPseudo(5);
+                    statusElement.innerText = 'SUCCESS';
+                    continue;
+                }
+                await sleep(animationSpeed);
             }
         }
 
