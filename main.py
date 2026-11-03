@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request
+from math import isfinite
 import subprocess
 
 app = Flask(__name__)
@@ -126,21 +127,23 @@ def get_bubble_steps():
     return jsonify({"steps": steps})
 
 
-def build_mst_trace():
-    nodes = list('ABCDEFG')
-    edges = [
-        {"u": "A", "v": "B", "weight": 4},
-        {"u": "A", "v": "C", "weight": 3},
-        {"u": "B", "v": "C", "weight": 1},
-        {"u": "B", "v": "D", "weight": 2},
-        {"u": "C", "v": "D", "weight": 4},
-        {"u": "C", "v": "E", "weight": 2},
-        {"u": "D", "v": "E", "weight": 3},
-        {"u": "D", "v": "F", "weight": 2},
-        {"u": "E", "v": "F", "weight": 3},
-        {"u": "E", "v": "G", "weight": 5},
-        {"u": "F", "v": "G", "weight": 1},
-    ]
+def build_mst_trace(nodes=None, edges=None):
+    if nodes is None:
+        nodes = list('ABCDEFG')
+    if edges is None:
+        edges = [
+            {"u": "A", "v": "B", "weight": 4},
+            {"u": "A", "v": "C", "weight": 3},
+            {"u": "B", "v": "C", "weight": 1},
+            {"u": "B", "v": "D", "weight": 2},
+            {"u": "C", "v": "D", "weight": 4},
+            {"u": "C", "v": "E", "weight": 2},
+            {"u": "D", "v": "E", "weight": 3},
+            {"u": "D", "v": "F", "weight": 2},
+            {"u": "E", "v": "F", "weight": 3},
+            {"u": "E", "v": "G", "weight": 5},
+            {"u": "F", "v": "G", "weight": 1},
+        ]
     parent = {node: node for node in nodes}
     rank = {node: 0 for node in nodes}
     steps = []
@@ -177,9 +180,52 @@ def build_mst_trace():
     return {"nodes": nodes, "edges": edges}, steps, total_weight
 
 
-@app.route('/mst')
+def validate_mst_graph(payload):
+    if not isinstance(payload, dict):
+        raise ValueError("Send a graph with nodes and edges.")
+
+    nodes = payload.get("nodes")
+    edges = payload.get("edges")
+    if not isinstance(nodes, list) or not 2 <= len(nodes) <= 26:
+        raise ValueError("A graph must have between 2 and 26 points.")
+    if any(not isinstance(node, str) or len(node) != 1 or not "A" <= node <= "Z" for node in nodes):
+        raise ValueError("Point labels must be unique letters from A to Z.")
+    if len(set(nodes)) != len(nodes):
+        raise ValueError("Point labels must be unique.")
+    if not isinstance(edges, list) or len(edges) > 325:
+        raise ValueError("Provide a valid list of weighted edges.")
+
+    valid_edges = []
+    seen_pairs = set()
+    for edge in edges:
+        if not isinstance(edge, dict):
+            raise ValueError("Each edge needs two endpoints and a distance.")
+        first, second, weight = edge.get("u"), edge.get("v"), edge.get("weight")
+        if first not in nodes or second not in nodes or first == second:
+            raise ValueError("Edges must connect two different points in the graph.")
+        if isinstance(weight, bool) or not isinstance(weight, (int, float)) or not isfinite(weight) or weight < 0:
+            raise ValueError("Edge distances must be finite, non-negative numbers.")
+        pair = frozenset((first, second))
+        if pair in seen_pairs:
+            raise ValueError("Only one edge is allowed between each pair of points.")
+        seen_pairs.add(pair)
+        valid_edges.append({"u": first, "v": second, "weight": weight})
+
+    return nodes, valid_edges
+
+
+@app.route('/mst', methods=['GET', 'POST'])
 def get_mst_steps():
-    graph, steps, total_weight = build_mst_trace()
+    if request.method == 'POST':
+        try:
+            nodes, edges = validate_mst_graph(request.get_json(silent=True))
+            graph, steps, total_weight = build_mst_trace(nodes, edges)
+            if steps[-1]["edgeCount"] != len(nodes) - 1:
+                return jsonify({"error": "The graph is disconnected. Connect every point before solving its minimum spanning tree."}), 400
+        except ValueError as error:
+            return jsonify({"error": str(error)}), 400
+    else:
+        graph, steps, total_weight = build_mst_trace()
     return jsonify({"graph": graph, "steps": steps, "totalWeight": total_weight})
 
 
